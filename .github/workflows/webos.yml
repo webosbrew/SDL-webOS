@@ -25,15 +25,14 @@ jobs:
         uses: robinraju/release-downloader@v1.11
         with:
           repository: "openlgtv/buildroot-nc4"
-          latest: true
+          tag: 'webos-b17b4cc'
           fileName: "arm-webos-linux-gnueabi_sdk-buildroot.tar.gz"
+          extract: 'true'
           out-file-path: "/tmp"
 
-      - name: Extract webOS NDK
+      - name: Relocate webOS NDK
         working-directory: /tmp
-        run: |
-          tar xzf arm-webos-linux-gnueabi_sdk-buildroot.tar.gz
-          ./arm-webos-linux-gnueabi_sdk-buildroot/relocate-sdk.sh
+        run: ./arm-webos-linux-gnueabi_sdk-buildroot/relocate-sdk.sh
 
       - name: Configure (CMake)
         run: |
