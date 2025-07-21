@@ -70,6 +70,9 @@ int SDL_webOSRegisterApp()
     }
     if (SDL_GetHintBoolean(SDL_HINT_WEBOS_REGISTER_APP, SDL_TRUE)) {
         const char *appId = SDL_getenv("APPID");
+        if (appId == NULL) {
+            return SDL_SetError("APPID environment variable is not set");
+        }
         s_nativeLifeCycleInterfaceVersion = getNativeLifeCycleInterfaceVersion(appId);
         if (s_nativeLifeCycleInterfaceVersion == -1) {
             char errbuf[1024];
@@ -271,7 +274,7 @@ static int screenSaverRequestCallback(LSHandle *sh, LSMessage *reply, HContext *
     (void) ctx;
 
     device = SDL_GetVideoDevice();
-    if (device == NULL || !device->suspend_screensaver) {
+    if (device == NULL) {
         return 1;
     }
 
@@ -288,7 +291,7 @@ static int screenSaverRequestCallback(LSHandle *sh, LSMessage *reply, HContext *
     }
     response = PBNJSON_jobject_create_var(
         PBNJSON_jkeyval(J_CSTR_TO_JVAL("clientName"), PBNJSON_j_cstr_to_jval((const char *)ctx->userdata)),
-        PBNJSON_jkeyval(J_CSTR_TO_JVAL("ack"), PBNJSON_jboolean_create(0)),
+        PBNJSON_jkeyval(J_CSTR_TO_JVAL("ack"), PBNJSON_jboolean_create(!device->suspend_screensaver)),
         PBNJSON_jkeyval(J_CSTR_TO_JVAL("timestamp"), timestamp),
         NULL);
 
