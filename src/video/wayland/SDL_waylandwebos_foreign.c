@@ -62,6 +62,14 @@ const char *WaylandWebOS_CreateExportedWindow(_THIS, SDL_webOSExportedWindowType
         SDL_SetError("Failed creating exported window: No current window");
         return NULL;
     }
+
+    if (!(window->flags & SDL_WINDOW_OPENGL)) {
+        if (SDL_RecreateWindow(window, window->flags | SDL_WINDOW_OPENGL) != 0) {
+            SDL_SetError("Failed creating exported window: Failed to recreate window with OpenGL");
+            return NULL;
+        }
+    }
+
     window_data = window->driverdata;
     if (window_data == NULL || window_data->surface == NULL) {
         SDL_SetError("Failed creating exported window: No surface for window");
