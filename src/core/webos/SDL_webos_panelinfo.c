@@ -23,7 +23,7 @@ SDL_bool SDL_webOSGetPanelResolution(int *width, int *height) {
         }
         free(response);
     }
-    if (SDL_webOSLunaServiceCallSync("luna://com.webos.service.tv.systemproperty/getSystemInfo",
+    if (!result && SDL_webOSLunaServiceCallSync("luna://com.webos.service.tv.systemproperty/getSystemInfo",
                                      "{\"keys\": [\"UHD\"]}", 1, &response) && response != NULL) {
         jdomparser_ref parser = NULL;
         jvalue_ref parsed;
