@@ -605,11 +605,15 @@ static void display_handle_mode(void *data,
 
         driverdata->refresh = refresh;
 
-        /* wl_output v1 has no done event, so synthesize one. It belongs here
-         * rather than after the geometry: the compositor sends geometry first
-         * and the mode after it, so finishing from there published a display
-         * before any mode had arrived, leaving it 0x0. Only the current mode
-         * ends the burst -- a compositor may advertise others first. */
+        /* Synthesize the done event that only exists from wl_output v2. This
+         * runs on webOS even though it advertises v2, because
+         * wl_proxy_get_version is missing there and the fallback reports 0.
+         *
+         * It belongs here rather than after the geometry: the compositor sends
+         * geometry first and the mode after it, so finishing from there
+         * published a display before any mode had arrived, leaving it 0x0.
+         * Only the current mode ends the burst -- a compositor may advertise
+         * others first. */
         if (wl_output_get_version(output) < 2) {
             display_handle_done(data, output);
         }
