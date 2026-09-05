@@ -67,6 +67,10 @@ typedef struct
 #ifdef HAVE_LIBDECOR_H
         struct libdecor *libdecor;
 #endif
+#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+        struct wl_shell *wl;
+        struct wl_webos_shell *webos;
+#endif /* SDL_VIDEO_DRIVER_WAYLAND_WEBOS */
     } shell;
     struct zwp_relative_pointer_manager_v1 *relative_pointer_manager;
     struct zwp_pointer_constraints_v1 *pointer_constraints;
@@ -97,6 +101,17 @@ typedef struct
     struct qt_surface_extension *surface_extension;
     struct qt_windowmanager *windowmanager;
 #endif /* SDL_VIDEO_DRIVER_WAYLAND_QT_TOUCH */
+#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+    struct wl_webos_foreign *webos_foreign;
+    struct wl_webos_input_manager *webos_input_manager;
+    struct wl_starfish_pointer *starfish_pointer;
+    struct text_model_factory *text_model_factory;
+    struct {
+        unsigned int count;
+        struct webos_foreign_window *windows;
+    } *webos_foreign_table;
+    struct webos_osk_data *webos_screen_keyboard_data;
+#endif /* SDL_VIDEO_DRIVER_WAYLAND_WEBOS */
 
     char *classname;
 

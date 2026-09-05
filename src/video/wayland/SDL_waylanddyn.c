@@ -25,6 +25,8 @@
 #define DEBUG_DYNAMIC_WAYLAND 0
 
 #include "SDL_waylanddyn.h"
+#include "SDL_waylanddyn_backport.h"
+#include "SDL_waylandwebos_abifix.h"
 
 #ifdef SDL_VIDEO_DRIVER_WAYLAND_DYNAMIC
 
@@ -120,6 +122,9 @@ void SDL_WAYLAND_UnloadSymbols(void)
                     waylandlibs[i].lib = NULL;
                 }
             }
+#if defined (SDL_VIDEO_DRIVER_WAYLAND_WEBOS) && defined (SDL_WEBOS_BROKEN_ABI)
+            WaylandWebOS_AbiFixFini();
+#endif
 #endif
         }
     }
@@ -158,6 +163,20 @@ int SDL_WAYLAND_LoadSymbols(void)
             SDL_WAYLAND_UnloadSymbols();
             rc = 0;
         }
+        if (!WAYLAND_wl_proxy_get_version) {
+            WAYLAND_wl_proxy_get_version = FALLBACK_wl_proxy_get_version;
+        }
+        if (!WAYLAND_wl_proxy_marshal_constructor) {
+            WAYLAND_wl_proxy_marshal_constructor = FALLBACK_wl_proxy_marshal_constructor;
+        }
+        if(!WAYLAND_wl_proxy_marshal_constructor_versioned) {
+            WAYLAND_wl_proxy_marshal_constructor_versioned = FALLBACK_wl_proxy_marshal_constructor_versioned;
+        }
+#if defined (SDL_VIDEO_DRIVER_WAYLAND_WEBOS) && defined (SDL_WEBOS_BROKEN_ABI)
+        if (WaylandWebOS_AbiFixInit() != 0) {
+            rc = 0;
+        }
+#endif
 
 #else /* no dynamic WAYLAND */
 

@@ -241,6 +241,14 @@ void SDL_MousePostInit(void)
             SDL_FreeSurface(surface);
         }
     }
+#ifdef __WEBOS__
+    {
+        SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, 1, 1, 32, SDL_PIXELFORMAT_ARGB8888);
+        SDL_memset(surface->pixels, 0, (size_t)surface->h * surface->pitch);
+        mouse->hidden_cursor = SDL_CreateColorCursor(surface, 0, 0);
+        SDL_FreeSurface(surface);
+    }
+#endif /* __WEBOS__ */
 }
 
 void SDL_SetDefaultCursor(SDL_Cursor *cursor)

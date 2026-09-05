@@ -429,6 +429,39 @@ typedef enum SDL_Scancode
 
     /* Add any other keys here. */
 
+    /**
+     * \name webOS keys
+     *
+     * These are values that are used on webOS.
+     * The mapping can be found in decompiled keyboard_handle_key function as a series of int arrays.
+     */
+    /* @{ */
+    SDL_SCANCODE_WEBOS_1 = 340,
+    SDL_SCANCODE_WEBOS_2 = 341,
+    SDL_SCANCODE_WEBOS_3 = 342,
+    SDL_SCANCODE_WEBOS_4 = 343,
+    SDL_SCANCODE_WEBOS_5 = 344,
+    SDL_SCANCODE_WEBOS_6 = 345,
+    SDL_SCANCODE_WEBOS_7 = 346,
+    SDL_SCANCODE_WEBOS_8 = 347,
+    SDL_SCANCODE_WEBOS_9 = 348,
+    SDL_SCANCODE_WEBOS_10 = 349,
+    SDL_SCANCODE_WEBOS_11 = 350,
+    SDL_SCANCODE_WEBOS_12 = 351,
+    SDL_SCANCODE_WEBOS_HOME = 384 /**< webOS remote home button (keyboard super button) */,
+    SDL_SCANCODE_WEBOS_CH_UP = 480 /**< webOS remote previous channel button */,
+    SDL_SCANCODE_WEBOS_CH_DOWN = 481 /**< webOS remote next channel button */,
+    SDL_SCANCODE_WEBOS_BACK = 482 /**< webOS back button */,
+    SDL_SCANCODE_WEBOS_CURSOR_SHOW = 484 /**< webOS show cursor event, sent as a key */,
+    SDL_SCANCODE_WEBOS_CURSOR_HIDE = 485 /**< webOS hide cursor event, sent as a key */,
+    SDL_SCANCODE_WEBOS_RED = 486 /**< webOS remote red button */,
+    SDL_SCANCODE_WEBOS_GREEN = 487 /**< webOS remote green button */,
+    SDL_SCANCODE_WEBOS_YELLOW = 488 /**< webOS remote yellow button */,
+    SDL_SCANCODE_WEBOS_BLUE = 489 /**< webOS remote blue button */,
+    SDL_SCANCODE_WEBOS_GUIDE = 495 /**< webOS remote guide button */,
+    SDL_SCANCODE_WEBOS_EXIT = 505 /**< webOS remote exit button */,
+    /* @} *//* webOS keys */
+
     SDL_NUM_SCANCODES = 512 /**< not a key, just marks the number of scancodes
                                  for array bounds */
 } SDL_Scancode;

@@ -146,11 +146,16 @@ int Wayland_GLES_SwapWindow(_THIS, SDL_Window *window)
 
             WAYLAND_wl_display_flush(display);
 
-            /* wl_display_prepare_read_queue() will return -1 if the event queue is not empty.
-             * If the event queue is empty, it will prepare us for our SDL_IOReady() call. */
-            if (WAYLAND_wl_display_prepare_read_queue(display, data->gles_swap_frame_event_queue) != 0) {
-                /* We have some pending events. Check if the frame callback happened. */
-                WAYLAND_wl_display_dispatch_queue_pending(display, data->gles_swap_frame_event_queue);
+            if (WAYLAND_wl_display_prepare_read_queue && data->gles_swap_frame_event_queue) {
+                /* wl_display_prepare_read_queue() will return -1 if the event queue is not empty.
+                 * If the event queue is empty, it will prepare us for our SDL_IOReady() call. */
+                if (WAYLAND_wl_display_prepare_read_queue(display, data->gles_swap_frame_event_queue) != 0) {
+                    /* We have some pending events. Check if the frame callback happened. */
+                    WAYLAND_wl_display_dispatch_queue_pending(display, data->gles_swap_frame_event_queue);
+                    continue;
+                }
+            } else if (WAYLAND_wl_display_dispatch_pending(display) > 0) {
+                /* We dispatched some pending events. Check if the frame callback happened. */
                 continue;
             }
 
@@ -158,20 +163,34 @@ int Wayland_GLES_SwapWindow(_THIS, SDL_Window *window)
 
             now = SDL_GetTicks();
             if (SDL_TICKS_PASSED(now, max_wait)) {
+                /* If wl_display_prepare_read_queue is not called, we must not call wl_display_cancel_read().
+                   Doing so would decrement wl_display->reader_count to -1, causing a deadlock. */
+                if (!WAYLAND_wl_display_cancel_read || !WAYLAND_wl_display_prepare_read_queue || !data->gles_swap_frame_event_queue) {
+                    break;
+                }
                 /* Timeout expired. Cancel the read. */
                 WAYLAND_wl_display_cancel_read(display);
                 break;
             }
 
             if (SDL_IOReady(WAYLAND_wl_display_get_fd(display), SDL_IOR_READ, max_wait - now) <= 0) {
+                /* If wl_display_prepare_read_queue is not called, we must not call wl_display_cancel_read().
+                   Doing so would decrement wl_display->reader_count to -1, causing a deadlock. */
+                if (!WAYLAND_wl_display_cancel_read || !WAYLAND_wl_display_prepare_read_queue || !data->gles_swap_frame_event_queue) {
+                    break;
+                }
                 /* Error or timeout expired without any events for us. Cancel the read. */
                 WAYLAND_wl_display_cancel_read(display);
                 break;
             }
 
-            /* We have events. Read and dispatch them. */
-            WAYLAND_wl_display_read_events(display);
-            WAYLAND_wl_display_dispatch_queue_pending(display, data->gles_swap_frame_event_queue);
+            if (data->gles_swap_frame_event_queue) {
+                /* We have events. Read and dispatch them. */
+                WAYLAND_wl_display_read_events(display);
+                WAYLAND_wl_display_dispatch_queue_pending(display, data->gles_swap_frame_event_queue);
+            } else {
+                WAYLAND_wl_display_dispatch(display);
+            }
         }
         SDL_AtomicSet(&data->swap_interval_ready, 0);
     }

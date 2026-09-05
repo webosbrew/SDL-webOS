@@ -226,6 +226,9 @@ typedef struct SDL_KeyboardEvent
     Uint32 type;        /**< SDL_KEYDOWN or SDL_KEYUP */
     Uint32 timestamp;   /**< In milliseconds, populated using SDL_GetTicks() */
     Uint32 windowID;    /**< The window with keyboard focus, if any */
+#ifdef SDL_WEBOS_BROKEN_ABI
+    Uint32 inputSource; /**< webOS specific field */
+#endif /* SDL_WEBOS_BROKEN_ABI */
     Uint8 state;        /**< SDL_PRESSED or SDL_RELEASED */
     Uint8 repeat;       /**< Non-zero if this is a key repeat */
     Uint8 padding2;
@@ -243,6 +246,9 @@ typedef struct SDL_TextEditingEvent
     Uint32 type;                                /**< SDL_TEXTEDITING */
     Uint32 timestamp;                           /**< In milliseconds, populated using SDL_GetTicks() */
     Uint32 windowID;                            /**< The window with keyboard focus, if any */
+#ifdef SDL_WEBOS_BROKEN_ABI
+    Uint32 inputSource;                         /**< webOS specific field */
+#endif /* SDL_WEBOS_BROKEN_ABI */
     char text[SDL_TEXTEDITINGEVENT_TEXT_SIZE];  /**< The editing text */
     Sint32 start;                               /**< The start cursor of selected editing text */
     Sint32 length;                              /**< The length of selected editing text */
@@ -290,6 +296,9 @@ typedef struct SDL_TextInputEvent
     Uint32 type;                              /**< SDL_TEXTINPUT */
     Uint32 timestamp;                         /**< In milliseconds, populated using SDL_GetTicks() */
     Uint32 windowID;                          /**< The window with keyboard focus, if any */
+#ifdef SDL_WEBOS_BROKEN_ABI
+    Uint32 inputSource;                       /**< webOS specific field */
+#endif /* SDL_WEBOS_BROKEN_ABI */
     char text[SDL_TEXTINPUTEVENT_TEXT_SIZE];  /**< The input text; UTF-8 encoded. */
 } SDL_TextInputEvent;
 

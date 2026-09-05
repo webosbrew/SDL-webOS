@@ -46,12 +46,11 @@ SDL_WAYLAND_SYM(void, wl_proxy_destroy, (struct wl_proxy *))
 SDL_WAYLAND_SYM(int, wl_proxy_add_listener, (struct wl_proxy *, void (**)(void), void *))
 SDL_WAYLAND_SYM(void, wl_proxy_set_user_data, (struct wl_proxy *, void *))
 SDL_WAYLAND_SYM(void *, wl_proxy_get_user_data, (struct wl_proxy *))
-SDL_WAYLAND_SYM(uint32_t, wl_proxy_get_version, (struct wl_proxy *))
+SDL_WAYLAND_SYM_OPT(uint32_t, wl_proxy_get_version, (struct wl_proxy *))
 SDL_WAYLAND_SYM(uint32_t, wl_proxy_get_id, (struct wl_proxy *))
-SDL_WAYLAND_SYM(const char *, wl_proxy_get_class, (struct wl_proxy *))
 SDL_WAYLAND_SYM(void, wl_proxy_set_queue, (struct wl_proxy *, struct wl_event_queue *))
-SDL_WAYLAND_SYM(void *, wl_proxy_create_wrapper, (void *))
-SDL_WAYLAND_SYM(void, wl_proxy_wrapper_destroy, (void *))
+SDL_WAYLAND_SYM_OPT(void *, wl_proxy_create_wrapper, (void *))
+SDL_WAYLAND_SYM_OPT(void, wl_proxy_wrapper_destroy, (void *))
 SDL_WAYLAND_SYM(struct wl_display *, wl_display_connect, (const char *))
 SDL_WAYLAND_SYM(struct wl_display *, wl_display_connect_to_fd, (int))
 SDL_WAYLAND_SYM(void, wl_display_disconnect, (struct wl_display *))
@@ -60,10 +59,10 @@ SDL_WAYLAND_SYM(int, wl_display_dispatch, (struct wl_display *))
 SDL_WAYLAND_SYM(int, wl_display_dispatch_queue, (struct wl_display *, struct wl_event_queue *))
 SDL_WAYLAND_SYM(int, wl_display_dispatch_queue_pending, (struct wl_display *, struct wl_event_queue *))
 SDL_WAYLAND_SYM(int, wl_display_dispatch_pending, (struct wl_display *))
-SDL_WAYLAND_SYM(int, wl_display_prepare_read, (struct wl_display *))
-SDL_WAYLAND_SYM(int, wl_display_prepare_read_queue, (struct wl_display *, struct wl_event_queue *))
-SDL_WAYLAND_SYM(int, wl_display_read_events, (struct wl_display *))
-SDL_WAYLAND_SYM(void, wl_display_cancel_read, (struct wl_display *))
+SDL_WAYLAND_SYM_OPT(int, wl_display_prepare_read, (struct wl_display *))
+SDL_WAYLAND_SYM_OPT(int, wl_display_prepare_read_queue, (struct wl_display *, struct wl_event_queue *))
+SDL_WAYLAND_SYM_OPT(int, wl_display_read_events, (struct wl_display *))
+SDL_WAYLAND_SYM_OPT(void, wl_display_cancel_read, (struct wl_display *))
 SDL_WAYLAND_SYM(int, wl_display_get_error, (struct wl_display *))
 SDL_WAYLAND_SYM(int, wl_display_flush, (struct wl_display *))
 SDL_WAYLAND_SYM(int, wl_display_roundtrip, (struct wl_display *))
@@ -76,10 +75,13 @@ SDL_WAYLAND_SYM(void, wl_list_remove, (struct wl_list *))
 SDL_WAYLAND_SYM(int, wl_list_length, (const struct wl_list *))
 SDL_WAYLAND_SYM(int, wl_list_empty, (const struct wl_list *))
 SDL_WAYLAND_SYM(void, wl_list_insert_list, (struct wl_list *, struct wl_list *))
-SDL_WAYLAND_SYM(struct wl_proxy *, wl_proxy_marshal_constructor, (struct wl_proxy *, uint32_t opcode, const struct wl_interface *interface, ...))
-SDL_WAYLAND_SYM(struct wl_proxy *, wl_proxy_marshal_constructor_versioned, (struct wl_proxy *proxy, uint32_t opcode, const struct wl_interface *interface, uint32_t version, ...))
+SDL_WAYLAND_SYM_OPT(struct wl_proxy *, wl_proxy_marshal_constructor, (struct wl_proxy *, uint32_t opcode, const struct wl_interface *interface, ...))
+SDL_WAYLAND_SYM_OPT(struct wl_proxy *, wl_proxy_marshal_constructor_versioned, (struct wl_proxy *proxy, uint32_t opcode, const struct wl_interface *interface, uint32_t version, ...))
+
+#if SDL_WAYLAND_CHECK_VERSION(1, 15, 0)
 SDL_WAYLAND_SYM(void, wl_proxy_set_tag, (struct wl_proxy *, const char * const *))
 SDL_WAYLAND_SYM(const char * const *, wl_proxy_get_tag, (struct wl_proxy *))
+#endif
 
 #if SDL_WAYLAND_CHECK_VERSION(1, 20, 0)
 /* wayland-scanner 1.20 generates code that will call these, so these are
@@ -135,6 +137,8 @@ SDL_WAYLAND_SYM(void, xkb_keymap_unref, (struct xkb_keymap *) )
 SDL_WAYLAND_SYM(void, xkb_state_unref, (struct xkb_state *) )
 SDL_WAYLAND_SYM(void, xkb_context_unref, (struct xkb_context *) )
 SDL_WAYLAND_SYM(struct xkb_context *, xkb_context_new, (enum xkb_context_flags flags) )
+SDL_WAYLAND_SYM(void, xkb_context_set_log_fn, (struct xkb_context *,\
+                      void (*log_fn)(struct xkb_context *, enum xkb_log_level, const char *, va_list)))
 SDL_WAYLAND_SYM(enum xkb_state_component, xkb_state_update_mask, (struct xkb_state *state,\
                       xkb_mod_mask_t depressed_mods,\
                       xkb_mod_mask_t latched_mods,\
@@ -142,16 +146,16 @@ SDL_WAYLAND_SYM(enum xkb_state_component, xkb_state_update_mask, (struct xkb_sta
                       xkb_layout_index_t depressed_layout,\
                       xkb_layout_index_t latched_layout,\
                       xkb_layout_index_t locked_layout) )
-SDL_WAYLAND_SYM(struct xkb_compose_table *, xkb_compose_table_new_from_locale, (struct xkb_context *,\
+SDL_WAYLAND_SYM_OPT(struct xkb_compose_table *, xkb_compose_table_new_from_locale, (struct xkb_context *,\
                       const char *locale, enum xkb_compose_compile_flags) )
-SDL_WAYLAND_SYM(void, xkb_compose_table_unref, (struct xkb_compose_table *) )
-SDL_WAYLAND_SYM(struct xkb_compose_state *, xkb_compose_state_new, (struct xkb_compose_table *, enum xkb_compose_state_flags) )
-SDL_WAYLAND_SYM(void, xkb_compose_state_reset, (struct xkb_compose_state *) )
-SDL_WAYLAND_SYM(void, xkb_compose_state_unref, (struct xkb_compose_state *) )
-SDL_WAYLAND_SYM(enum xkb_compose_feed_result, xkb_compose_state_feed, (struct xkb_compose_state *, xkb_keysym_t) )
-SDL_WAYLAND_SYM(enum xkb_compose_status, xkb_compose_state_get_status, (struct xkb_compose_state *) )
-SDL_WAYLAND_SYM(xkb_keysym_t, xkb_compose_state_get_one_sym, (struct xkb_compose_state *) )
-SDL_WAYLAND_SYM(void, xkb_keymap_key_for_each, (struct xkb_keymap *, xkb_keymap_key_iter_t, void*) )
+SDL_WAYLAND_SYM_OPT(void, xkb_compose_table_unref, (struct xkb_compose_table *) )
+SDL_WAYLAND_SYM_OPT(struct xkb_compose_state *, xkb_compose_state_new, (struct xkb_compose_table *, enum xkb_compose_state_flags) )
+SDL_WAYLAND_SYM_OPT(void, xkb_compose_state_reset, (struct xkb_compose_state *) )
+SDL_WAYLAND_SYM_OPT(void, xkb_compose_state_unref, (struct xkb_compose_state *) )
+SDL_WAYLAND_SYM_OPT(enum xkb_compose_feed_result, xkb_compose_state_feed, (struct xkb_compose_state *, xkb_keysym_t) )
+SDL_WAYLAND_SYM_OPT(enum xkb_compose_status, xkb_compose_state_get_status, (struct xkb_compose_state *) )
+SDL_WAYLAND_SYM_OPT(xkb_keysym_t, xkb_compose_state_get_one_sym, (struct xkb_compose_state *) )
+SDL_WAYLAND_SYM_OPT(void, xkb_keymap_key_for_each, (struct xkb_keymap *, xkb_keymap_key_iter_t, void*) )
 SDL_WAYLAND_SYM(int, xkb_keymap_key_get_syms_by_level, (struct xkb_keymap *,
                                                         xkb_keycode_t,
                                                         xkb_layout_index_t,

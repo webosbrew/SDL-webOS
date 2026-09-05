@@ -24,6 +24,7 @@
 
 #include "SDL_scancode_tables_c.h"
 
+#include "SDL_scancode_webos_c.h"
 #include "scancodes_darwin.h"
 #include "scancodes_linux.h"
 #include "scancodes_xfree86.h"
@@ -60,7 +61,17 @@ SDL_Scancode SDL_GetScancodeFromTable(SDL_ScancodeTable table, int keycode)
 {
     SDL_Scancode scancode = SDL_SCANCODE_UNKNOWN;
     int num_entries;
-    const SDL_Scancode *scancodes = SDL_GetScancodeTable(table, &num_entries);
+    const SDL_Scancode *scancodes;
+
+#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+    if (keycode >= 0) {
+        scancode = SDL_GetWebOSScancode(keycode + 8);
+        if (scancode != SDL_SCANCODE_UNKNOWN) {
+            return scancode;
+        }
+    }
+#endif
+    scancodes = SDL_GetScancodeTable(table, &num_entries);
 
     if (keycode >= 0 && keycode < num_entries) {
         scancode = scancodes[keycode];

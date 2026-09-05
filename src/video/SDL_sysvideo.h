@@ -349,6 +349,13 @@ struct SDL_VideoDevice
     /* Tell window that app enabled drag'n'drop events */
     void (*AcceptDragAndDrop)(SDL_Window *window, SDL_bool accept);
 
+    /* webOS specific functions */
+    const char *(*WebOSCreateExportedWindow)(_THIS, Uint32 type);
+    SDL_bool (*WebOSSetExportedWindow)(_THIS, const char *window_id, SDL_Rect *src, SDL_Rect *dst);
+    SDL_bool (*WebOSExportedSetCropRegion)(_THIS, const char *window_id, SDL_Rect *org, SDL_Rect *src, SDL_Rect *dst);
+    SDL_bool (*WebOSExportedSetProperty)(_THIS, const char *window_id, const char *name, const char *value);
+    void (*WebOSDestroyExportedWindow)(_THIS, const char *window_id);
+
     /* * * */
     /* Data common to all drivers */
     SDL_threadID thread;
@@ -442,6 +449,11 @@ struct SDL_VideoDevice
     struct SDL_PrivateGLESData *gles_data;
 #endif
 
+#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+    SDL_mutex *webos_foreign_lock;
+    Uint32 webos_cursor_sleep_time;
+#endif
+
     /* * * */
     /* The function used to dispose of this structure */
     void (*free)(_THIS);
@@ -475,6 +487,7 @@ extern VideoBootStrap KMSDRM_bootstrap;
 extern VideoBootStrap KMSDRM_LEGACY_bootstrap;
 extern VideoBootStrap DUMMY_bootstrap;
 extern VideoBootStrap DUMMY_evdev_bootstrap;
+extern VideoBootStrap DELEGATE_bootstrap;
 extern VideoBootStrap Wayland_bootstrap;
 extern VideoBootStrap NACL_bootstrap;
 extern VideoBootStrap VIVANTE_bootstrap;

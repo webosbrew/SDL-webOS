@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="starfish">
+  <interface name="wl_starfish_pointer" version="1">
+    <request name="set_mrcu_standby_timer">
+      <arg name="p0" type="uint"/>
+    </request>
+    <request name="get_mrcu_standby_timer">
+    </request>
+    <request name="set_cursor_position">
+      <arg name="p0" type="uint"/>
+      <arg name="p1" type="uint"/>
+    </request>
+    <event name="timer_value">
+      <arg name="p0" type="uint"/>
+    </event>
+  </interface>
+  <interface name="wl_starfish_output" version="1">
+    <request name="set_stereoscope">
+      <arg name="p0" type="uint"/>
+      <arg name="p1" type="uint"/>
+      <arg name="p2" type="object" interface="wl_surface"/>
+    </request>
+    <event name="stereoscope_hint">
+      <arg name="p0" type="uint"/>
+    </event>
+  </interface>
+</protocol>

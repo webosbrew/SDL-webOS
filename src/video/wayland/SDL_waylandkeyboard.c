@@ -38,6 +38,19 @@ int Wayland_InitKeyboard(_THIS)
 #endif
     SDL_SetScancodeName(SDL_SCANCODE_APPLICATION, "Menu");
 
+#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+    SDL_SetScancodeName(SDL_SCANCODE_WEBOS_CH_UP, "ChannelUp");
+    SDL_SetScancodeName(SDL_SCANCODE_WEBOS_CH_DOWN, "ChannelDown");
+    SDL_SetScancodeName(SDL_SCANCODE_WEBOS_BACK, "Back");
+    SDL_SetScancodeName(SDL_SCANCODE_WEBOS_CURSOR_SHOW, "CursorShow");
+    SDL_SetScancodeName(SDL_SCANCODE_WEBOS_CURSOR_HIDE, "CursorHide");
+    SDL_SetScancodeName(SDL_SCANCODE_WEBOS_RED, "Red");
+    SDL_SetScancodeName(SDL_SCANCODE_WEBOS_GREEN, "Green");
+    SDL_SetScancodeName(SDL_SCANCODE_WEBOS_YELLOW, "Yellow");
+    SDL_SetScancodeName(SDL_SCANCODE_WEBOS_BLUE, "Blue");
+    SDL_SetScancodeName(SDL_SCANCODE_WEBOS_EXIT, "Exit");
+#endif
+
     return 0;
 }
 

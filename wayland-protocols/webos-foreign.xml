@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="webos_foreign">
+  <interface name="wl_webos_foreign" version="1">
+    <description summary="interface for handling foreign surfaces">
+      This interface defines a way to associate one or more foreign surfaces from
+      different clients or a punch-through region to a surface that acts the main
+      window.
+      You can set a region on the main window where a foreign surface or a
+      punch-through region can be placed. It is called &quot;exported&quot; region or window
+      in this protocol. Then you can request the compositor to punch through that
+      region or attach another surface as an &quot;imported&quot; content.
+    </description>
+    <request name="destroy" type="destructor">
+      <description summary="destroy object">
+        Destroys the foreign object.
+      </description>
+    </request>
+    <enum name="webos_exported_type">
+      <description summary="type of webos_exported">
+        This indicates the type of the content that the exported window can show.
+      </description>
+      <entry name="video_object" value="0" summary="exported window for video object"/>
+      <entry name="subtitle_object" value="1" summary="exported window for subtitle object"/>
+      <entry name="transparent_object" value="2" summary="exported window for transparent object that does not need to punch through other windows"/>
+      <entry name="opaque_object" value="3" summary="exported window for opaque object that always needs to punch through other windows"/>
+    </enum>
+    <request name="export_element">
+      <description summary="create webos_exported">
+        Requests to create an exported window on a given surface.
+      </description>
+      <arg name="id" type="new_id" interface="wl_webos_exported"/>
+      <arg name="surface" type="object" interface="wl_surface"/>
+      <arg name="exported_type" type="uint"/>
+    </request>
+    <request name="import_element">
+      <description summary="create webos_imported">
+        Requests an import object that can be associated with a given exported window.
+      </description>
+      <arg name="id" type="new_id" interface="wl_webos_imported"/>
+      <arg name="window_id" type="string"/>
+      <arg name="exported_type" type="uint"/>
+    </request>
+  </interface>
+  <interface name="wl_webos_exported" version="1">
+    <description summary="interface for handling exported window">
+      This interface defines operations and notifications on an exported window.
+    </description>
+    <request name="destroy" type="destructor">
+      <description summary="destroy object">
+        Destroys the exported object.
+      </description>
+    </request>
+    <request name="set_exported_window">
+      <description summary="set window to be exported">
+        Sets the exported window with source and destination regions.
+      </description>
+      <arg name="source_region" type="object" interface="wl_region"/>
+      <arg name="destination_region" type="object" interface="wl_region"/>
+    </request>
+    <request name="set_crop_region">
+      <description summary="set region to be cropped">
+        Sets a region to be cropped.
+      </description>
+      <arg name="original_input" type="object" interface="wl_region"/>
+      <arg name="source_region" type="object" interface="wl_region"/>
+      <arg name="destination_region" type="object" interface="wl_region"/>
+    </request>
+    <request name="set_property">
+      <description summary="set a property">
+        Sets a property for this webos_exported. The property is given by a string pair (name, value).
+      </description>
+      <arg name="name" type="string"/>
+      <arg name="value" type="string"/>
+    </request>
+    <event name="window_id_assigned">
+      <description summary="window is associated with this wl_webos_exported">
+        Notifies window_id of the exported window.
+      </description>
+      <arg name="window_id" type="string"/>
+      <arg name="exported_type" type="uint"/>
+    </event>
+  </interface>
+  <interface name="wl_webos_imported" version="1">
+    <description summary="interface for imported content or punchthrough region">
+      This interface defines operations and notifications on an imported object.
+    </description>
+    <enum name="surface_alignment" bitfield="true">
+      <description summary="surface alignment">
+        The alignment of an imported surface on the associated exported window.
+      </description>
+      <entry name="stretch" value="0"/>
+      <entry name="north" value="1"/>
+      <entry name="west" value="2"/>
+      <entry name="south" value="4"/>
+      <entry name="east" value="8"/>
+      <entry name="center" value="16"/>
+      <entry name="crop" value="32"/>
+      <entry name="fit" value="64"/>
+    </enum>
+    <request name="set_surface_alignment">
+      <description summary="set surface alignment">
+        Sets the alignment of the imported surface.
+      </description>
+      <arg name="format" type="uint"/>
+    </request>
+    <request name="destroy" type="destructor">
+      <description summary="destroy object">
+        Destroys the imported object.
+      </description>
+    </request>
+    <request name="attach_punchthrough">
+      <arg name="p0" type="string"/>
+    </request>
+    <request name="detach_punchthrough">
+      <description summary="detach punchthrough">
+        Requests to detatch the punch-through from the exported window
+        associated with this import object.
+      </description>
+    </request>
+    <request name="attach_surface">
+      <description summary="attach surface">
+        Requests to attach the surface as imported to the associated
+        exported window.
+      </description>
+      <arg name="surface" type="object" interface="wl_surface"/>
+    </request>
+    <request name="detach_surface">
+      <description summary="detach surface">
+        Requests to detach the surface as imported from the associated
+        exported window.
+      </description>
+      <arg name="surface" type="object" interface="wl_surface"/>
+    </request>
+    <request name="set_z_index">
+      <description summary="set the z-index for webos_imported">
+        Set the z index for webos_imported. The compositor will move the surface,
+        that is attached to webos_imported, to this layer. If no surface is attached to
+        webos_imported, nothing will happen.
+      </description>
+      <arg name="z_index" type="int"/>
+    </request>
+    <event name="destination_region_changed">
+      <description summary="destination region changed">
+        Notifies the change of the destination region of associated exported window.
+      </description>
+      <arg name="width" type="uint"/>
+      <arg name="height" type="uint"/>
+    </event>
+    <event name="punchthrough_attached">
+      <description summary="punchthrough attached">
+        Notifies that a punchthrough is attached to webos_imported.
+      </description>
+      <arg name="context_id" type="string"/>
+    </event>
+    <event name="punchthrough_detached">
+      <description summary="punchthrough detached">
+        Notifies that a punchthrough is detached from webos_imported.
+      </description>
+      <arg name="context_id" type="string"/>
+    </event>
+    <event name="surface_attached">
+      <description summary="surface attached">
+        Notifies that a surface is attached to webos_imported.
+      </description>
+      <arg name="surface" type="object" interface="wl_surface"/>
+    </event>
+    <event name="surface_detached">
+      <description summary="surface detached">
+        Notifies that a surface is detached from webos_imported.
+      </description>
+      <arg name="surface" type="object" interface="wl_surface"/>
+    </event>
+  </interface>
+</protocol>

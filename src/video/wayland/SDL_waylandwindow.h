@@ -68,13 +68,20 @@ typedef struct
             } roleobj;
             SDL_bool initial_configure_seen;
         } xdg;
+#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+        struct {
+            struct wl_shell_surface *wl;
+            struct wl_webos_shell_surface *webos;
+        } webos;
+#endif
     } shell_surface;
     enum
     {
         WAYLAND_SURFACE_UNKNOWN = 0,
         WAYLAND_SURFACE_XDG_TOPLEVEL,
         WAYLAND_SURFACE_XDG_POPUP,
-        WAYLAND_SURFACE_LIBDECOR
+        WAYLAND_SURFACE_LIBDECOR,
+        WAYLAND_SURFACE_WEBOS,
     } shell_surface_type;
 
     struct wl_egl_window *egl_window;
@@ -123,6 +130,9 @@ typedef struct
     SDL_bool in_fullscreen_transition;
     Uint32 fullscreen_flags;
     SDL_bool double_buffer;
+#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+    Uint32 webos_shell_state;
+#endif
 } SDL_WindowData;
 
 extern void Wayland_ShowWindow(_THIS, SDL_Window *window);
