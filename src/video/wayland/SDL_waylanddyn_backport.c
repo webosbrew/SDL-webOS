@@ -68,11 +68,13 @@ struct wl_proxy *FALLBACK_wl_proxy_marshal_constructor(struct wl_proxy *proxy, u
     }
 
     proxy_interface = (*(struct wl_interface **)proxy);
-    if (opcode > proxy_interface->method_count) {
+    if (opcode >= proxy_interface->method_count) {
+        wl_proxy_destroy(id);
         return NULL;
     }
     num_args = parse_msg_signature(proxy_interface->methods[opcode].signature, &new_id_index);
     if (new_id_index < 0) {
+        wl_proxy_destroy(id);
         return NULL;
     }
     memset(varargs, 0, sizeof(varargs));
@@ -104,11 +106,13 @@ struct wl_proxy *FALLBACK_wl_proxy_marshal_constructor_versioned(struct wl_proxy
     }
 
     proxy_interface = (*(struct wl_interface **)proxy);
-    if (opcode > proxy_interface->method_count) {
+    if (opcode >= proxy_interface->method_count) {
+        wl_proxy_destroy(id);
         return NULL;
     }
     num_args = parse_msg_signature(proxy_interface->methods[opcode].signature, &new_id_index);
     if (new_id_index < 0) {
+        wl_proxy_destroy(id);
         return NULL;
     }
     memset(varargs, 0, sizeof(varargs));
