@@ -54,6 +54,11 @@
 #endif
 #endif
 
+#ifdef __WEBOS__
+#include "../joystick/webos/dev_presence.h"
+#include "../joystick/webos/uevent_monitor.h"
+#endif /* __WEBOS__ */
+
 #include "../core/linux/SDL_udev.h"
 #ifdef SDL_USE_LIBUDEV
 #include "../core/linux/SDL_sandbox.h"
@@ -77,7 +82,11 @@ typedef enum
 {
     ENUMERATION_UNSET,
     ENUMERATION_LIBUDEV,
-    ENUMERATION_FALLBACK
+    ENUMERATION_FALLBACK,
+#ifdef __WEBOS__
+    ENUMERATION_POLLING,
+    ENUMERATION_NETLINK,
+#endif
 } LinuxEnumerationMethod;
 
 static LinuxEnumerationMethod linux_enumeration_method = ENUMERATION_UNSET;
@@ -115,6 +124,10 @@ static struct
     struct udev *m_pUdev;
     struct udev_monitor *m_pUdevMonitor;
     int m_nUdevFd;
+#endif
+#ifdef __WEBOS__
+    Uint32 m_unPresenceFlags;
+    SDL_webOSUeventMonitor *m_pUeventMonitor;
 #endif
 } SDL_HIDAPI_discovery;
 
@@ -308,6 +321,10 @@ static void HIDAPI_InitializeDiscovery(void)
 
 #endif /* __MACOSX__ */
 
+#ifdef __WEBOS__
+    SDL_HIDAPI_discovery.m_unPresenceFlags = 0;
+#endif
+
 #if defined(SDL_USE_LIBUDEV)
     if (linux_enumeration_method == ENUMERATION_LIBUDEV) {
         SDL_HIDAPI_discovery.m_pUdev = NULL;
@@ -328,6 +345,17 @@ static void HIDAPI_InitializeDiscovery(void)
         }
     } else
 #endif /* SDL_USE_LIBUDEV */
+#ifdef __WEBOS__
+    if (linux_enumeration_method == ENUMERATION_POLLING || linux_enumeration_method == ENUMERATION_NETLINK) {
+        /* Hidraw hotplug has its own monitor: netlink broadcasts a copy to
+         * every bound socket, but a single fd shared with the joystick
+         * backend would mean whichever drained first ate the other's
+         * events. Without one we keep the 3s presence poll below. */
+        SDL_HIDAPI_discovery.m_pUeventMonitor =
+            SDL_webOSUeventMonitorOpen(SDL_WEBOS_DEVICE_PRESENCE_CHECK_HIDRAW);
+        SDL_HIDAPI_discovery.m_bCanGetNotifications = SDL_TRUE;
+    } else
+#endif
     {
 #if defined(HAVE_INOTIFY)
         inotify_fd = SDL_inotify_init1();
@@ -434,6 +462,31 @@ static void HIDAPI_UpdateDiscovery(void)
         }
     } else
 #endif /* SDL_USE_LIBUDEV */
+#ifdef __WEBOS__
+    if (SDL_HIDAPI_discovery.m_pUeventMonitor != NULL) {
+        SDL_webOSUevent event;
+
+        /* Every add or remove counts; the enumeration behind
+         * SDL_hid_device_change_count() re-reads /dev/hidraw* anyway, so the
+         * node itself doesn't matter here, only that something moved. */
+        while (SDL_webOSUeventMonitorPoll(SDL_HIDAPI_discovery.m_pUeventMonitor, &event)) {
+            ++SDL_HIDAPI_discovery.m_unDeviceChangeCounter;
+        }
+    } else if (linux_enumeration_method == ENUMERATION_POLLING) {
+        const Uint32 SDL_HIDAPI_DETECT_INTERVAL_MS = 3000; /* Update every 3 seconds */
+        Uint32 now = SDL_GetTicks();
+        Uint32 next_detect = SDL_HIDAPI_discovery.m_unLastDetect + SDL_HIDAPI_DETECT_INTERVAL_MS;
+        if (!SDL_HIDAPI_discovery.m_unLastDetect || SDL_TICKS_PASSED(now, next_detect)) {
+            // Loop through /dev/hidraw*
+            Uint32 flags = SDL_webOSGetDevicePresenceFlags(SDL_WEBOS_DEVICE_PRESENCE_CHECK_HIDRAW);
+            if (flags != SDL_HIDAPI_discovery.m_unPresenceFlags) {
+                ++SDL_HIDAPI_discovery.m_unDeviceChangeCounter;
+                SDL_HIDAPI_discovery.m_unPresenceFlags = flags;
+            }
+            SDL_HIDAPI_discovery.m_unLastDetect = now;
+        }
+    } else
+#endif
     {
 #if defined(HAVE_INOTIFY)
         if (inotify_fd >= 0) {
@@ -481,6 +534,11 @@ static void HIDAPI_ShutdownDiscovery(void)
     if (!SDL_HIDAPI_discovery.m_bInitialized) {
         return;
     }
+
+#ifdef __WEBOS__
+    SDL_webOSUeventMonitorClose(SDL_HIDAPI_discovery.m_pUeventMonitor);
+    SDL_HIDAPI_discovery.m_pUeventMonitor = NULL;
+#endif
 
 #if defined(__WIN32__) || defined(__WINGDK__)
     if (SDL_HIDAPI_discovery.m_hNotify) {
@@ -577,7 +635,11 @@ static const SDL_UDEV_Symbols *udev_ctx = NULL;
 #define udev_list_entry_get_next                      udev_ctx->udev_list_entry_get_next
 #define udev_enumerate_unref                          udev_ctx->udev_enumerate_unref
 
+#ifdef __WEBOS__
+#include "webos/hid.c"
+#else /* __WEBOS__ */
 #include "linux/hid.c"
+#endif
 #define HAVE_PLATFORM_BACKEND
 #endif /* SDL_USE_LIBUDEV */
 
@@ -1008,6 +1070,10 @@ static void DeleteHIDDeviceWrapper(SDL_hid_device *device)
 {
     device->magic = NULL;
     SDL_free(device);
+#ifdef __WEBOS__
+    SDL_HIDAPI_discovery.m_unPresenceFlags = SDL_webOSGetDevicePresenceFlags(SDL_WEBOS_DEVICE_PRESENCE_CHECK_HIDRAW);
+    SDL_HIDAPI_discovery.m_unLastDetect = SDL_GetTicks();
+#endif
 }
 
 #define CHECK_DEVICE_MAGIC(device, retval)           \
@@ -1086,7 +1152,11 @@ int SDL_hid_init(void)
     } else if (SDL_DetectSandbox() != SDL_SANDBOX_NONE) {
         SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
                      "Container detected, disabling HIDAPI udev integration");
+#ifdef __WEBOS__
+        linux_enumeration_method = ENUMERATION_POLLING;
+#else
         linux_enumeration_method = ENUMERATION_FALLBACK;
+#endif
     } else {
         SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
                      "Using udev for HIDAPI joystick device discovery");

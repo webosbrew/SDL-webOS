@@ -2101,6 +2101,13 @@ SDL_bool SDL_ShouldIgnoreGameController(const char *name, SDL_JoystickGUID guid)
     Uint16 product;
     Uint16 version;
 
+#if defined(__WEBOS__)
+    if (SDL_strncmp(name, "LGE ", 4) == 0 || SDL_strncmp(name, "LG ", 3) == 0) {
+        /* Ignore LG input devices */
+        return SDL_TRUE;
+    }
+#endif
+
 #if defined(__LINUX__)
     if (SDL_endswith(name, " Motion Sensors")) {
         /* Don't treat the PS3 and PS4 motion controls as a separate game controller */

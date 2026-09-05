@@ -508,7 +508,7 @@ void _Redraw(int rendererID)
         /* Stop text input because we cannot hold any more characters */
         SDL_StopTextInput();
         return;
-    } else {
+    } else if (!SDL_IsTextInputActive()) {
         SDL_StartTextInput();
     }
 
@@ -763,6 +763,16 @@ int main(int argc, char *argv[])
                 cursor = event.edit.start;
                 Redraw();
                 break;
+            case SDL_MOUSEBUTTONUP:
+                if (SDL_HasScreenKeyboardSupport()) {
+                    SDL_Point mousePoint;
+                    mousePoint.x = event.button.x;
+                    mousePoint.y = event.button.y;
+                    if (SDL_PointInRect(&mousePoint, &textRect)) {
+                        SDL_StartTextInput();
+                    }
+                    break;
+                }
             }
         }
     }
