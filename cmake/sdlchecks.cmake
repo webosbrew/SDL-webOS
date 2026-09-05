@@ -631,11 +631,26 @@ macro(WaylandProtocolGen _SCANNER _CODE_MODE _XML _PROTL)
     set(_WAYLAND_PROT_C_CODE "${CMAKE_CURRENT_BINARY_DIR}/wayland-generated-protocols/${_PROTL}-protocol.c")
     set(_WAYLAND_PROT_H_CODE "${CMAKE_CURRENT_BINARY_DIR}/wayland-generated-protocols/${_PROTL}-client-protocol.h")
 
+    set(_HEADER_EXTRA_DEPENDS "")
+    set(_HEADER_EXTRA_COMMANDS "")
+
+    if(SDL_WAYLAND_WEBOS)
+      get_filename_component(_XML_DIR "${_XML}" DIRECTORY)
+      get_filename_component(_PATCH_NAME "${_WAYLAND_PROT_H_CODE}" NAME)
+      set(_PATCH "${_XML_DIR}/webos-patches/${_PATCH_NAME}.awk")
+      if (EXISTS "${_PATCH}")
+        set(_HEADER_EXTRA_COMMANDS COMMAND "${CMAKE_COMMAND}" ARGS "-E" "rename" "${_WAYLAND_PROT_H_CODE}" "${_WAYLAND_PROT_H_CODE}.orig"
+                COMMAND "${GAWK}" ARGS "-f" "${_PATCH}" "${_WAYLAND_PROT_H_CODE}.orig" > "${_WAYLAND_PROT_H_CODE}")
+        set(_HEADER_EXTRA_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/wayland-generated-protocols/wayland-webos-abifix.h")
+      endif()
+    endif()
+
     add_custom_command(
         OUTPUT "${_WAYLAND_PROT_H_CODE}"
-        DEPENDS "${_XML}"
+        DEPENDS "${_XML}" ${_HEADER_EXTRA_DEPENDS}
         COMMAND "${_SCANNER}"
         ARGS client-header "${_XML}" "${_WAYLAND_PROT_H_CODE}"
+        ${_HEADER_EXTRA_COMMANDS}
     )
 
     add_custom_command(
@@ -658,7 +673,7 @@ endmacro()
 macro(CheckWayland)
   if(SDL_WAYLAND)
     set(WAYLAND_FOUND FALSE)
-    pkg_check_modules(PKG_WAYLAND "wayland-client>=1.18" wayland-egl wayland-cursor egl "xkbcommon>=0.5.0")
+    pkg_check_modules(PKG_WAYLAND "wayland-client>=1.10" wayland-egl wayland-cursor egl "xkbcommon>=0.5.0")
 
     if(PKG_WAYLAND_FOUND)
       set(WAYLAND_FOUND TRUE)
@@ -696,6 +711,16 @@ macro(CheckWayland)
       # We have to generate some protocol interface code for some unstable Wayland features.
       file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/wayland-generated-protocols")
       target_include_directories(sdl-build-options SYSTEM INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/wayland-generated-protocols")
+
+      if(SDL_WAYLAND_WEBOS)
+        set(HAVE_WAYLAND_WEBOS TRUE)
+        set(SDL_VIDEO_DRIVER_WAYLAND_WEBOS 1)
+        find_program(GAWK gawk REQUIRED)
+        set(_ABIFIX_SOURCE "${SDL2_SOURCE_DIR}/src/video/wayland/wayland-webos-abifix.h")
+        set(_ABIFIX_TARGET "${CMAKE_CURRENT_BINARY_DIR}/wayland-generated-protocols/wayland-webos-abifix.h")
+        add_custom_command(OUTPUT "${_ABIFIX_TARGET}"
+          COMMAND "${CMAKE_COMMAND}" ARGS "-E" "copy_if_different" "${_ABIFIX_SOURCE}" "${_ABIFIX_TARGET}")
+      endif()
 
       file(GLOB WAYLAND_PROTOCOLS_XML RELATIVE "${SDL2_SOURCE_DIR}/wayland-protocols/" "${SDL2_SOURCE_DIR}/wayland-protocols/*.xml")
       foreach(_XML ${WAYLAND_PROTOCOLS_XML})
@@ -1377,7 +1402,7 @@ macro(CheckLibUnwind)
   set(found_libunwind FALSE)
   set(_libunwind_src "#include <libunwind.h>\nint main() {unw_context_t context; unw_getcontext(&context); return 0;}")
 
-  if(NOT found_libunwind)
+  if(NOT found_libunwind AND NOT WEBOS)
     cmake_push_check_state()
     check_c_source_compiles("${_libunwind_src}" LIBC_HAS_WORKING_LIBUNWIND)
     cmake_pop_check_state()

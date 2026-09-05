@@ -240,6 +240,11 @@
 #define __3DS__ 1
 #endif
 
+#if defined(__WEBOS__)
+#undef __WEBOS__
+#define __WEBOS__ 1
+#endif
+
 #include "begin_code.h"
 /* Set up for C function definitions, even when using C++ */
 #ifdef __cplusplus

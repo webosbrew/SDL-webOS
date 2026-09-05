@@ -1,0 +1,72 @@
+name: Build (webOS)
+
+on:
+  push:
+    tags-ignore:
+      - '*'
+    branches:
+      - '*'
+  pull_request:
+  release:
+    types: [ published ]
+
+jobs:
+  build:
+    name: "Build (webOS ABI: ${{ matrix.webos-abi }})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        webos-abi: [ 'ON', 'OFF' ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download webOS NDK
+        uses: robinraju/release-downloader@v1.11
+        with:
+          repository: "openlgtv/buildroot-nc4"
+          tag: 'webos-b17b4cc'
+          fileName: "arm-webos-linux-gnueabi_sdk-buildroot.tar.gz"
+          extract: 'true'
+          out-file-path: "/tmp"
+
+      - name: Relocate webOS NDK
+        working-directory: /tmp
+        run: ./arm-webos-linux-gnueabi_sdk-buildroot/relocate-sdk.sh
+
+      - name: Configure (CMake)
+        run: |
+          cmake -B build -S . \
+            -DCMAKE_TOOLCHAIN_FILE=/tmp/arm-webos-linux-gnueabi_sdk-buildroot/share/buildroot/toolchainfile.cmake \
+            -DCMAKE_BUILD_TYPE=Release -DWEBOS=ON -DSDL_OFFSCREEN=OFF -DSDL_DISKAUDIO=OFF \
+            -DSDL_DUMMYAUDIO=OFF -DSDL_DUMMYVIDEO=OFF -DSDL_KMSDRM=OFF -DSDL_VENDOR_INFO="webOS Backport" \
+            -DSDL_WEBOS_BROKEN_ABI=${{ matrix.webos-abi }}
+
+      - name: Build (CMake)
+        run: cmake --build build/ --config Release --verbose --parallel
+
+      - name: Package (Release Only)
+        if: github.event_name == 'release'
+        shell: bash
+        run: |
+          cmake --install build/ --prefix dist
+          cd dist
+          if [ "${BUILD_WEBOS_ABI}" == "ON" ]; then
+            tar -czf ../SDL2-$(./bin/sdl2-config --version)-webos-abi.tar.gz .
+          else
+            tar -czf ../SDL2-$(./bin/sdl2-config --version)-webos.tar.gz .
+          fi
+        env:
+          BUILD_WEBOS_ABI: ${{ matrix.webos-abi }}
+
+      - name: Release
+        if: github.event_name == 'release'
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.event.release.tag_name }}
+          allowUpdates: true
+          omitNameDuringUpdate: true
+          omitBody: true
+          omitPrereleaseDuringUpdate: true
+          artifacts: SDL2-*.tar.gz
