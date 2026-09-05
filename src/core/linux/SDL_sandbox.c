@@ -27,6 +27,15 @@
 
 SDL_Sandbox SDL_DetectSandbox(void)
 {
+#ifdef __WEBOS__
+    if (SDL_getenv("SDL_WEBOS_FORCE_JAILED") != NULL) {
+        return SDL_SANDBOX_UNKNOWN_CONTAINER;
+    }
+    if (access("/var/palm/jail", F_OK) == 0) {
+        return SDL_SANDBOX_NONE;
+    }
+    return SDL_SANDBOX_UNKNOWN_CONTAINER;
+#else
     if (access("/.flatpak-info", F_OK) == 0) {
         return SDL_SANDBOX_FLATPAK;
     }
@@ -42,6 +51,7 @@ SDL_Sandbox SDL_DetectSandbox(void)
     }
 
     return SDL_SANDBOX_NONE;
+#endif
 }
 
 /* vi: set ts=4 sw=4 expandtab: */

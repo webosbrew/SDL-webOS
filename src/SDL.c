@@ -33,6 +33,8 @@
 
 /* this checks for HAVE_DBUS_DBUS_H internally. */
 #include "core/linux/SDL_dbus.h"
+#include "core/webos/SDL_webos_init.h"
+#include "core/webos/SDL_webos_libs.h"
 
 #if defined(__EMSCRIPTEN__)
 #include <emscripten.h>
@@ -117,6 +119,9 @@ static SDL_bool SDL_MainIsReady = SDL_TRUE;
 static SDL_bool SDL_main_thread_initialized = SDL_FALSE;
 static SDL_bool SDL_bInMainQuit = SDL_FALSE;
 static Uint8 SDL_SubsystemRefCount[32];
+#ifdef __WEBOS__
+static SDL_bool SDL_WebOSInitCalled = SDL_FALSE;
+#endif
 
 /* Private helper to increment a subsystem's ref counter. */
 static void SDL_PrivateSubsystemRefCountIncr(Uint32 subsystem)
@@ -223,6 +228,22 @@ int SDL_InitSubSystem(Uint32 flags)
 
 #ifdef SDL_USE_LIBDBUS
     SDL_DBus_Init();
+#endif
+#ifdef __WEBOS__
+    if (SDL_webOSLoadLibraries() < 0) {
+        return SDL_SetError("Failed to load webOS libraries");
+    }
+    if (!SDL_WebOSInitCalled) {
+        SDL_WebOSInitCalled = SDL_TRUE;
+#ifdef SDL_WEBOS_HAVE_LIBHELPER
+        SDL_webOSInitLSHandle();
+        if (!SDL_webOSAppRegistered()) {
+            if (SDL_webOSRegisterApp() != 0) {
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to register app: %s", SDL_GetError());
+            }
+        }
+#endif
+    }
 #endif
 
 #ifdef SDL_VIDEO_DRIVER_WINDOWS
@@ -523,6 +544,12 @@ void SDL_Quit(void)
 #ifdef SDL_USE_LIBDBUS
     SDL_DBus_Quit();
 #endif
+#ifdef __WEBOS__
+#ifdef SDL_WEBOS_HAVE_LIBHELPER
+    SDL_webOSUnregisterApp();
+#endif
+    SDL_webOSUnloadLibraries();
+#endif
 
     SDL_ClearHints();
     SDL_AssertionsQuit();
@@ -594,7 +621,7 @@ const char *SDL_GetPlatform(void)
     return "HP-UX";
 #elif defined(__IRIX__)
     return "Irix";
-#elif defined(__LINUX__)
+#elif defined(__LINUX__) && !defined(__WEBOS__)
     return "Linux";
 #elif defined(__MINT__)
     return "Atari MiNT";
@@ -642,6 +669,8 @@ const char *SDL_GetPlatform(void)
     return "Nokia N-Gage";
 #elif defined(__3DS__)
     return "Nintendo 3DS";
+#elif defined(__WEBOS__)
+    return "webOS";
 #else
     return "Unknown (see SDL_platform.h)";
 #endif

@@ -3121,6 +3121,63 @@ extern "C" {
  */
 #define SDL_HINT_APPLE_RWFROMFILE_USE_RESOURCES "SDL_APPLE_RWFROMFILE_USE_RESOURCES"
 
+/**
+ * \brief  A variable that decides whether to let the app handle back key.
+ *
+ * By default, launcher strip will be opened when back key is pressed.
+ * Setting this hint to "true" will cause key event with scancode "SDL_WEBOS_SCANCODE_BACK" to be fired.
+ */
+#define SDL_HINT_WEBOS_ACCESS_POLICY_KEYS_BACK "SDL_WEBOS_ACCESS_POLICY_KEYS_BACK"
+/**
+ * \brief  A variable that decides whether to let the app handle exit key (long-pressing back for magic remotes).
+ */
+#define SDL_HINT_WEBOS_ACCESS_POLICY_KEYS_EXIT "SDL_WEBOS_ACCESS_POLICY_KEYS_EXIT"
+/**
+ * \brief  A variable that decides whether to let the app handle home key. (L_Super on keyboard)
+ */
+#define SDL_HINT_WEBOS_ACCESS_POLICY_KEYS_HOME "SDL_WEBOS_ACCESS_POLICY_KEYS_HOME"
+/**
+ * \brief  A variable that decides whether to let the app handle TV guide key.
+ */
+#define SDL_HINT_WEBOS_ACCESS_POLICY_KEYS_GUIDE "SDL_WEBOS_ACCESS_POLICY_KEYS_GUIDE"
+/**
+ * \brief  A variable that decides whether to let the app handle meta key.
+ * This hint is only available on webOS 8 or later.
+ */
+#define SDL_HINT_WEBOS_ACCESS_POLICY_KEYS_META "SDL_WEBOS_ACCESS_POLICY_KEYS_META"
+/**
+ * \brief  A variable that decides whether to let the app allow ribbon (home launcher).
+ */
+#define SDL_HINT_WEBOS_ACCESS_POLICY_RIBBON "SDL_WEBOS_ACCESS_POLICY_RIBBON"
+/**
+ * \brief A variable that decides how long till the cursor is hidden in milliseconds.
+ */
+#define SDL_HINT_WEBOS_CURSOR_SLEEP_TIME "SDL_WEBOS_CURSOR_SLEEP_TIME"
+/**
+ * \brief A variable that decides whether to send Luna calls to register the app automatically.
+ */
+#define SDL_HINT_WEBOS_REGISTER_APP "SDL_WEBOS_REGISTER_APP"
+/**
+ * \brief A variable that decides the window class.
+ */
+#define SDL_HINT_WEBOS_WINDOW_CLASS "SDL_WEBOS_WINDOW_CLASS"
+/**
+ * \brief A variable that decides update frequency of the cursor in second.
+ */
+#define SDL_HINT_WEBOS_CURSOR_FREQUENCY "SDL_WEBOS_CURSOR_FREQUENCY"
+/**
+ * \brief A variable that decides whether to disable cursor calibration.
+ */
+#define SDL_HINT_WEBOS_CURSOR_CALIBRATION_DISABLE "SDL_WEBOS_CURSOR_CALIBRATION_DISABLE"
+/**
+ * \brief A variable that decides whether to let SDL handle input from game controllers.
+ *
+ * Since webOS 8.3.0, input from game controllers is mapped to navigation / volume control keys by default.
+ * This change is useful, but can cause doubled input. SDL disables this behavior by default to let developers
+ * handle game controller input by themselves. But the behavior can be disabled by setting this hint to "false".
+ */
+#define SDL_HINT_WEBOS_CLOUDGAME_ACTIVE "SDL_WEBOS_CLOUDGAME_ACTIVE"
+#define SDL_HINT_WEBOS_HIDAPI_IGNORE_BLUETOOTH_DEVICES  "SDL_WEBOS_HIDAPI_IGNORE_BLUETOOTH_DEVICES"
 
 /**
  * An enumeration of hint priorities
