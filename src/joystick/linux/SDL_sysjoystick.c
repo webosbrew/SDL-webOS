@@ -1169,7 +1169,12 @@ static int LINUX_JoystickInit(void)
     }
 #endif
 
-    if (enumeration_method == ENUMERATION_FALLBACK) {
+    if (enumeration_method != ENUMERATION_LIBUDEV
+#ifdef __WEBOS__
+        /* Neither webOS method wants inotify: /dev/input is not watchable in the app jail */
+        && enumeration_method != ENUMERATION_NETLINK && enumeration_method != ENUMERATION_POLLING
+#endif
+    ) {
 #if defined(HAVE_INOTIFY)
         inotify_fd = SDL_inotify_init1();
 
