@@ -2658,7 +2658,7 @@ void Wayland_display_add_input(SDL_VideoData *d, uint32_t id, uint32_t version)
     }
 
 #ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
-    if (d->webos_input_manager) {
+    if (d->webos_input_manager && WL_WEBOS_INPUT_MANAGER_GET_WEBOS_SEAT != -1) {
         input->webos_seat = wl_webos_input_manager_get_webos_seat(d->webos_input_manager, input->seat);
         if (input->webos_seat) {
             wl_webos_seat_add_listener(input->webos_seat, &webos_seat_listener, input);
