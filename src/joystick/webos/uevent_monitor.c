@@ -222,6 +222,13 @@ SDL_bool SDL_webOSUeventMonitorPoll(SDL_webOSUeventMonitor *monitor, SDL_webOSUe
             continue;
         }
 
+        /* The tail is gone, and a cut-off field would parse as a complete
+         * one, so drop the whole message rather than half-read it. */
+        if (msg.msg_flags & MSG_TRUNC) {
+            SDL_LogWarn(SDL_LOG_CATEGORY_INPUT, "Discarding truncated uevent (%d bytes)", (int)bytes);
+            continue;
+        }
+
         monitor->buf[bytes] = '\0';
 
         if (!ParseUevent(monitor->buf, (size_t)bytes, &subsystem, &devname, &action)) {
@@ -268,6 +275,8 @@ static void Resynchronize(SDL_webOSUeventMonitor *monitor)
     dir = opendir(monitor->base_dir);
 
     if (dir == NULL) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_INPUT, "Unable to enumerate %s: %s",
+                    monitor->base_dir, strerror(errno));
         return;
     }
 
@@ -298,7 +307,12 @@ static void Resynchronize(SDL_webOSUeventMonitor *monitor)
             void *resized = SDL_realloc(present, (size_t)capacity * NODE_NAME_SIZE);
 
             if (resized == NULL) {
-                break;
+                /* A short listing would read as devices having gone away, so
+                 * abandon the resync rather than emit removes for nodes that
+                 * are still there. */
+                closedir(dir);
+                SDL_free(present);
+                return;
             }
 
             present = (char(*)[NODE_NAME_SIZE])resized;
@@ -328,8 +342,9 @@ static void Resynchronize(SDL_webOSUeventMonitor *monitor)
             char name[NODE_NAME_SIZE];
 
             SDL_strlcpy(name, monitor->known[i], sizeof(name));
-            MarkUnknown(monitor, name);
-            QueueEvent(monitor, SDL_WEBOS_UEVENT_ACTION_REMOVE, name);
+            if (QueueEvent(monitor, SDL_WEBOS_UEVENT_ACTION_REMOVE, name)) {
+                MarkUnknown(monitor, name);
+            }
         }
     }
 
