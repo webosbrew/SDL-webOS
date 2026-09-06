@@ -350,10 +350,16 @@ static void HIDAPI_InitializeDiscovery(void)
         /* Hidraw hotplug has its own monitor: netlink broadcasts a copy to
          * every bound socket, but a single fd shared with the joystick
          * backend would mean whichever drained first ate the other's
-         * events. Without one we keep the 3s presence poll below. */
+         * events. Without one we keep the 3s presence poll below, which is
+         * only reached while m_bCanGetNotifications stays false. */
         SDL_HIDAPI_discovery.m_pUeventMonitor =
             SDL_webOSUeventMonitorOpen(SDL_WEBOS_DEVICE_PRESENCE_CHECK_HIDRAW);
-        SDL_HIDAPI_discovery.m_bCanGetNotifications = SDL_TRUE;
+        if (SDL_HIDAPI_discovery.m_pUeventMonitor != NULL) {
+            linux_enumeration_method = ENUMERATION_NETLINK;
+            SDL_HIDAPI_discovery.m_bCanGetNotifications = SDL_TRUE;
+        } else {
+            linux_enumeration_method = ENUMERATION_POLLING;
+        }
     } else
 #endif
     {
@@ -394,13 +400,21 @@ static void HIDAPI_UpdateDiscovery(void)
     }
 
     if (!SDL_HIDAPI_discovery.m_bCanGetNotifications) {
-        const Uint32 SDL_HIDAPI_DETECT_INTERVAL_MS = 3000; /* Update every 3 seconds */
-        Uint32 now = SDL_GetTicks();
-        if (!SDL_HIDAPI_discovery.m_unLastDetect || SDL_TICKS_PASSED(now, SDL_HIDAPI_discovery.m_unLastDetect + SDL_HIDAPI_DETECT_INTERVAL_MS)) {
-            ++SDL_HIDAPI_discovery.m_unDeviceChangeCounter;
-            SDL_HIDAPI_discovery.m_unLastDetect = now;
+#ifdef __WEBOS__
+        /* ENUMERATION_POLLING has its own, cheaper detect below: it diffs the
+         * /dev/hidraw* presence bitmask instead of forcing a full
+         * re-enumeration on every interval. */
+        if (linux_enumeration_method != ENUMERATION_POLLING)
+#endif
+        {
+            const Uint32 SDL_HIDAPI_DETECT_INTERVAL_MS = 3000; /* Update every 3 seconds */
+            Uint32 now = SDL_GetTicks();
+            if (!SDL_HIDAPI_discovery.m_unLastDetect || SDL_TICKS_PASSED(now, SDL_HIDAPI_discovery.m_unLastDetect + SDL_HIDAPI_DETECT_INTERVAL_MS)) {
+                ++SDL_HIDAPI_discovery.m_unDeviceChangeCounter;
+                SDL_HIDAPI_discovery.m_unLastDetect = now;
+            }
+            return;
         }
-        return;
     }
 
 #if defined(__WIN32__) || defined(__WINGDK__)
