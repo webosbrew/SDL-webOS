@@ -59,7 +59,7 @@ void SDL_SYS_GetPreferredLocales(char *buf, size_t buflen)
         }
     }
     PBNJSON_jdomparser_release(&parser);
-    free(response);
+    SDL_free(response);
 }
 
 /* vi: set ts=4 sw=4 expandtab: */

@@ -38,7 +38,8 @@ int SDL_webOSLoadLibraries()
 
 void SDL_webOSUnloadLibraries()
 {
-#define SDL_HELPERS_SYM(rc, fn, params) HELPERS_##fn = NULL;
+#define SDL_HELPERS_SYM(rc, fn, params)     HELPERS_##fn = NULL;
+#define SDL_HELPERS_SYM_OPT(rc, fn, params) HELPERS_##fn = NULL;
 #include "SDL_webos_helpers_sym.h"
     if (LibHelpersHandle != NULL) {
         SDL_UnloadObject(LibHelpersHandle);

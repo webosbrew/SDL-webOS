@@ -43,6 +43,8 @@ SDL_bool SDL_webOSLunaServiceCallSync(const char *uri, const char *payload, int 
     int callRet;
 
     if (!HELPERS_HLunaServiceCall) {
+        SDL_DestroyMutex(userdata.mutex);
+        SDL_DestroyCond(userdata.cond);
         SDL_SetError("webOS libraries are not initialized");
         return SDL_FALSE;
     }
@@ -56,7 +58,8 @@ SDL_bool SDL_webOSLunaServiceCallSync(const char *uri, const char *payload, int 
     if ((callRet = HELPERS_HLunaServiceCall(uri, payload, &context)) != 0) {
         SDL_DestroyMutex(userdata.mutex);
         SDL_DestroyCond(userdata.cond);
-        SDL_SetError("Failed to call %s: (%d) %s", uri, callRet, HELPERS_HGetError(callRet));
+        SDL_SetError("Failed to call %s: (%d) %s", uri, callRet,
+                     HELPERS_HGetError ? HELPERS_HGetError(callRet) : "unknown error");
         return SDL_FALSE;
     }
     SDL_LockMutex(userdata.mutex);

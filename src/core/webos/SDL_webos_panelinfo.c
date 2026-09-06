@@ -21,7 +21,7 @@ SDL_bool SDL_webOSGetPanelResolution(int *width, int *height) {
             result = SDL_TRUE;
             PBNJSON_jdomparser_release(&parser);
         }
-        free(response);
+        SDL_free(response);
     }
     if (!result && SDL_webOSLunaServiceCallSync("luna://com.webos.service.tv.systemproperty/getSystemInfo",
                                      "{\"keys\": [\"UHD\"]}", 1, &response) && response != NULL) {
@@ -46,7 +46,7 @@ SDL_bool SDL_webOSGetPanelResolution(int *width, int *height) {
             result = SDL_TRUE;
             PBNJSON_jdomparser_release(&parser);
         }
-        free(response);
+        SDL_free(response);
     }
     return result;
 }
@@ -100,7 +100,7 @@ SDL_bool SDL_webOSGetRefreshRate(int *rate) {
             }
             PBNJSON_jdomparser_release(&parser);
         }
-        free(response);
+        SDL_free(response);
     }
     return result;
 }

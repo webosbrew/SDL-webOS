@@ -149,7 +149,7 @@ int getNativeLifeCycleInterfaceVersion(const char *appId)
     }
     parsed = SDL_webOSJsonParse(output, &parser, 1);
     if (parsed == NULL) {
-        free(output);
+        SDL_free(output);
         return SDL_SetError("Failed to parse output of luna://com.webos.applicationManager/getAppInfo");
     }
 
@@ -162,7 +162,7 @@ int getNativeLifeCycleInterfaceVersion(const char *appId)
         version = 1;
     }
     PBNJSON_jdomparser_release(&parser);
-    free(output);
+    SDL_free(output);
     return version;
 }
 
@@ -184,7 +184,8 @@ static SDL_bool registerApp(const char *appId, int interfaceVersion)
         return SDL_FALSE;
     }
     if ((callRet = HELPERS_HLunaServiceCall(uri, payload, &s_AppLifecycleContext)) != 0) {
-        SDL_SetError("Failed to call %s: (%d) %s", uri, callRet, HELPERS_HGetError(callRet));
+        SDL_SetError("Failed to call %s: (%d) %s", uri, callRet,
+                     HELPERS_HGetError ? HELPERS_HGetError(callRet) : "unknown error");
         return SDL_FALSE;
     }
     return SDL_TRUE;
@@ -341,7 +342,7 @@ static SDL_bool turnOnScreen()
     if (!SDL_webOSLunaServiceCallSync("luna://com.webos.service.tvpower/power/turnOnScreen", "{}", 1, &output)) {
         return SDL_FALSE;
     }
-    free(output);
+    SDL_free(output);
     return SDL_TRUE;
 }
 
