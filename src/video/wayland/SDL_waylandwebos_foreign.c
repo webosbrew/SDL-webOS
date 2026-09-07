@@ -37,6 +37,9 @@ static struct wl_webos_exported_listener exported_listener = {
     .window_id_assigned = WindowIdAssigned,
 };
 
+/* The window id is only delivered in an event, so creation has to wait for it */
+#define WEBOS_WINDOW_ID_TIMEOUT_MS 1000
+
 static SDL_Window *WaylandWebOS_GetCurrentWindow(_THIS)
 {
     SDL_Window *window;
@@ -92,6 +95,7 @@ const char *WaylandWebOS_CreateExportedWindow(_THIS, SDL_webOSExportedWindowType
     SDL_Window *window;
     SDL_WindowData *window_data;
     webos_foreign_window *foreign_window;
+    Uint32 timeout;
 
     if (_this->driverdata == NULL) {
         SDL_SetError("Failed creating exported window: No video driver data for video device");
@@ -129,6 +133,19 @@ const char *WaylandWebOS_CreateExportedWindow(_THIS, SDL_webOSExportedWindowType
         return NULL;
     }
 
+    foreign_window->exported = wl_webos_foreign_export_element(data->webos_foreign, window_data->surface, type);
+    wl_webos_exported_add_listener(foreign_window->exported, &exported_listener, foreign_window);
+    timeout = SDL_GetTicks() + WEBOS_WINDOW_ID_TIMEOUT_MS;
+    while (foreign_window->window_id[0] == '\0') {
+        if (WAYLAND_wl_display_roundtrip(data->display) < 0 || SDL_TICKS_PASSED(SDL_GetTicks(), timeout)) {
+            wl_webos_exported_destroy(foreign_window->exported);
+            SDL_free(foreign_window);
+            SDL_SetError("Failed creating exported window: No window id was assigned");
+            SDL_UnlockMutex(_this->webos_foreign_lock);
+            return NULL;
+        }
+    }
+
     if (data->webos_foreign_table->windows != NULL) {
         webos_foreign_window *cur = data->webos_foreign_table->windows;
         while (cur->next != NULL) {
@@ -139,13 +156,6 @@ const char *WaylandWebOS_CreateExportedWindow(_THIS, SDL_webOSExportedWindowType
         data->webos_foreign_table->windows = foreign_window;
     }
     data->webos_foreign_table->count += 1;
-    foreign_window->exported = wl_webos_foreign_export_element(data->webos_foreign, window_data->surface, type);
-    wl_webos_exported_add_listener(foreign_window->exported, &exported_listener, foreign_window);
-    // This is a pretty bad idea, but LG did it even worse - they create a detached thread per 10 ms
-    while (foreign_window->window_id[0] == '\0') {
-        SDL_Delay(10);
-        WAYLAND_wl_display_dispatch(data->display);
-    }
     SDL_LogInfo(SDL_LOG_CATEGORY_VIDEO, "Created exported window %s", foreign_window->window_id);
     SDL_UnlockMutex(_this->webos_foreign_lock);
     return foreign_window->window_id;
