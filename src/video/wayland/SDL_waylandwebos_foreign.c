@@ -37,6 +37,55 @@ static struct wl_webos_exported_listener exported_listener = {
     .window_id_assigned = WindowIdAssigned,
 };
 
+static SDL_Window *WaylandWebOS_GetCurrentWindow(_THIS)
+{
+    SDL_Window *window;
+
+    if ((window = SDL_GL_GetCurrentWindow()) == NULL) {
+        window = _this->windows;
+        while (window != NULL) {
+            if (window->driverdata != NULL) {
+                break;
+            }
+            window = window->next;
+        }
+    }
+    return window;
+}
+
+/* wl_webos_exported takes no null regions - libwayland aborts the process
+   rather than marshal one - so "the whole window" has to be spelled out */
+static SDL_bool WaylandWebOS_GetWholeWindowRect(_THIS, SDL_Rect *rect)
+{
+    SDL_Window *window = WaylandWebOS_GetCurrentWindow(_this);
+
+    if (window == NULL) {
+        SDL_SetError("Failed setting exported window: No current window");
+        return SDL_FALSE;
+    }
+    rect->x = 0;
+    rect->y = 0;
+    SDL_GetWindowSizeInPixels(window, &rect->w, &rect->h);
+    return SDL_TRUE;
+}
+
+static struct wl_region *WaylandWebOS_CreateRegion(SDL_VideoData *data, const SDL_Rect *rect)
+{
+    struct wl_region *region = wl_compositor_create_region(data->compositor);
+
+    if (region != NULL) {
+        wl_region_add(region, rect->x, rect->y, rect->w, rect->h);
+    }
+    return region;
+}
+
+static void WaylandWebOS_DestroyRegion(struct wl_region *region)
+{
+    if (region != NULL) {
+        wl_region_destroy(region);
+    }
+}
+
 const char *WaylandWebOS_CreateExportedWindow(_THIS, SDL_webOSExportedWindowType type)
 {
     SDL_VideoData *data = _this->driverdata;
@@ -48,15 +97,7 @@ const char *WaylandWebOS_CreateExportedWindow(_THIS, SDL_webOSExportedWindowType
         SDL_SetError("Failed creating exported window: No video driver data for video device");
         return NULL;
     }
-    if ((window = SDL_GL_GetCurrentWindow()) == NULL) {
-        window = _this->windows;
-        while (window != NULL) {
-            if (window->driverdata != NULL) {
-                break;
-            }
-            window = window->next;
-        }
-    }
+    window = WaylandWebOS_GetCurrentWindow(_this);
 
     if (window == NULL) {
         SDL_SetError("Failed creating exported window: No current window");
@@ -124,8 +165,9 @@ SDL_bool WaylandWebOS_SetExportedWindow(_THIS, const char *windowId, SDL_Rect *s
     SDL_LockMutex(_this->webos_foreign_lock);
     if (data->webos_foreign_table->count != 0) {
         webos_foreign_window *window = data->webos_foreign_table->windows;
-        struct wl_region *src_region = NULL;
-        struct wl_region *dst_region = NULL;
+        struct wl_region *src_region;
+        struct wl_region *dst_region;
+        SDL_Rect whole;
         while (window != NULL) {
             if (SDL_strcmp(window->window_id, windowId) == 0) {
                 break;
@@ -138,21 +180,22 @@ SDL_bool WaylandWebOS_SetExportedWindow(_THIS, const char *windowId, SDL_Rect *s
             return SDL_FALSE;
         }
 
-        if (src != NULL) {
-            src_region = wl_compositor_create_region(data->compositor);
-            wl_region_add(src_region, src->x, src->y, src->w, src->h);
+        if ((src == NULL || dst == NULL) && !WaylandWebOS_GetWholeWindowRect(_this, &whole)) {
+            SDL_UnlockMutex(_this->webos_foreign_lock);
+            return SDL_FALSE;
         }
-        if (dst != NULL) {
-            dst_region = wl_compositor_create_region(data->compositor);
-            wl_region_add(dst_region, dst->x, dst->y, dst->w, dst->h);
+        src_region = WaylandWebOS_CreateRegion(data, src != NULL ? src : &whole);
+        dst_region = WaylandWebOS_CreateRegion(data, dst != NULL ? dst : &whole);
+        if (src_region == NULL || dst_region == NULL) {
+            WaylandWebOS_DestroyRegion(src_region);
+            WaylandWebOS_DestroyRegion(dst_region);
+            SDL_SetError("Failed setting exported window: Failed creating a region");
+            SDL_UnlockMutex(_this->webos_foreign_lock);
+            return SDL_FALSE;
         }
         wl_webos_exported_set_exported_window(window->exported, src_region, dst_region);
-        if (src_region != NULL) {
-            wl_region_destroy(src_region);
-        }
-        if (dst_region != NULL) {
-            wl_region_destroy(dst_region);
-        }
+        wl_region_destroy(src_region);
+        wl_region_destroy(dst_region);
         SDL_UnlockMutex(_this->webos_foreign_lock);
         return SDL_TRUE;
     } else {
@@ -173,12 +216,16 @@ SDL_bool WaylandWebOS_ExportedSetCropRegion(_THIS, const char *windowId, SDL_Rec
         SDL_SetError("Failed setting exported window: Invalid window id");
         return SDL_FALSE;
     }
+    if (org == NULL || src == NULL || dst == NULL) {
+        SDL_SetError("Failed setting exported window: A crop region needs org, src and dst");
+        return SDL_FALSE;
+    }
     SDL_LockMutex(_this->webos_foreign_lock);
     if (data->webos_foreign_table->count != 0) {
         webos_foreign_window *window = data->webos_foreign_table->windows;
-        struct wl_region *org_region = NULL;
-        struct wl_region *src_region = NULL;
-        struct wl_region *dst_region = NULL;
+        struct wl_region *org_region;
+        struct wl_region *src_region;
+        struct wl_region *dst_region;
         while (window != NULL) {
             if (SDL_strcmp(window->window_id, windowId) == 0) {
                 break;
@@ -190,28 +237,21 @@ SDL_bool WaylandWebOS_ExportedSetCropRegion(_THIS, const char *windowId, SDL_Rec
             SDL_UnlockMutex(_this->webos_foreign_lock);
             return SDL_FALSE;
         }
-        if (org != NULL) {
-            org_region = wl_compositor_create_region(data->compositor);
-            wl_region_add(org_region, org->x, org->y, org->w, org->h);
-        }
-        if (src != NULL) {
-            src_region = wl_compositor_create_region(data->compositor);
-            wl_region_add(src_region, src->x, src->y, src->w, src->h);
-        }
-        if (dst != NULL) {
-            dst_region = wl_compositor_create_region(data->compositor);
-            wl_region_add(dst_region, dst->x, dst->y, dst->w, dst->h);
+        org_region = WaylandWebOS_CreateRegion(data, org);
+        src_region = WaylandWebOS_CreateRegion(data, src);
+        dst_region = WaylandWebOS_CreateRegion(data, dst);
+        if (org_region == NULL || src_region == NULL || dst_region == NULL) {
+            WaylandWebOS_DestroyRegion(org_region);
+            WaylandWebOS_DestroyRegion(src_region);
+            WaylandWebOS_DestroyRegion(dst_region);
+            SDL_SetError("Failed setting exported window: Failed creating a region");
+            SDL_UnlockMutex(_this->webos_foreign_lock);
+            return SDL_FALSE;
         }
         wl_webos_exported_set_crop_region(window->exported, org_region, src_region, dst_region);
-        if (org_region != NULL) {
-            wl_region_destroy(org_region);
-        }
-        if (src_region != NULL) {
-            wl_region_destroy(src_region);
-        }
-        if (dst_region != NULL) {
-            wl_region_destroy(dst_region);
-        }
+        wl_region_destroy(org_region);
+        wl_region_destroy(src_region);
+        wl_region_destroy(dst_region);
         SDL_UnlockMutex(_this->webos_foreign_lock);
         return SDL_TRUE;
     } else {
