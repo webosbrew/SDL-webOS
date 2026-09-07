@@ -296,8 +296,18 @@ unsigned int
 SDL_KeySymToUcs4(Uint32 keysym)
 {
     /* 'Unicode keysym' */
-    if ((keysym & 0xff000000) == 0x01000000)
-        return (keysym & 0x00ffffff);
+    if ((keysym & 0xff000000) == 0x01000000) {
+        const Uint32 ucs4 = keysym & 0x00ffffff;
+
+        /* Only a codepoint makes a Unicode keysym. webOS maps its remote keys
+         * above the range, and taking those at face value invents a character
+         * that cannot be encoded.
+         */
+        if (ucs4 > 0x10FFFF || (ucs4 >= 0xD800 && ucs4 <= 0xDFFF)) {
+            return 0;
+        }
+        return ucs4;
+    }
 
     if (keysym > 0 && keysym < 0x100)
 	return keysym;
