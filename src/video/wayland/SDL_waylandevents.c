@@ -1750,7 +1750,7 @@ static void keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
     seat->keyboard.sdl_keymap = NULL;
     seat->keyboard.xkb.num_layouts = 0;
 
-#if SDL_XKBCOMMON_CHECK_VERSION(1, 10, 0)
+#if SDL_XKBCOMMON_CHECK_VERSION(1, 10, 0) && !defined(__WEBOS__)
     seat->keyboard.xkb.shift_mask = WAYLAND_xkb_keymap_mod_get_mask(seat->keyboard.xkb.keymap, XKB_MOD_NAME_SHIFT);
     seat->keyboard.xkb.ctrl_mask = WAYLAND_xkb_keymap_mod_get_mask(seat->keyboard.xkb.keymap, XKB_MOD_NAME_CTRL);
     seat->keyboard.xkb.alt_mask = WAYLAND_xkb_keymap_mod_get_mask(seat->keyboard.xkb.keymap, XKB_VMOD_NAME_ALT);
