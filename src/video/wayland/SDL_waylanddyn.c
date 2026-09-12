@@ -122,7 +122,7 @@ void SDL_WAYLAND_UnloadSymbols(void)
                     waylandlibs[i].lib = NULL;
                 }
             }
-#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+#if defined (SDL_VIDEO_DRIVER_WAYLAND_WEBOS) && defined (SDL_WEBOS_BROKEN_ABI)
             WaylandWebOS_AbiFixFini();
 #endif
 #endif
@@ -172,7 +172,7 @@ int SDL_WAYLAND_LoadSymbols(void)
         if(!WAYLAND_wl_proxy_marshal_constructor_versioned) {
             WAYLAND_wl_proxy_marshal_constructor_versioned = FALLBACK_wl_proxy_marshal_constructor_versioned;
         }
-#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+#if defined (SDL_VIDEO_DRIVER_WAYLAND_WEBOS) && defined (SDL_WEBOS_BROKEN_ABI)
         if (WaylandWebOS_AbiFixInit() != 0) {
             rc = 0;
         }

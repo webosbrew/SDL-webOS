@@ -972,11 +972,15 @@ static void display_handle_global(void *data, struct wl_registry *registry, uint
     } else if (SDL_strcmp(interface, "wl_webos_input_manager") == 0) {
         // Danger! Requests of wl_webos_input_manager has completely broken ABI.
         // NEVER use this interface directly.
+#ifdef SDL_WEBOS_BROKEN_ABI
         const struct wl_interface *iface = WaylandWebOS_AbiFixGetInterface(interface);
         if (iface) {
             d->webos_input_manager = wl_registry_bind(registry, id, iface, 1);
             wl_webos_input_manager_add_listener(d->webos_input_manager, &webos_input_manager_listener, d);
         }
+#else
+        d->webos_input_manager = wl_registry_bind(registry, id, &wl_webos_input_manager_interface, 1);
+#endif
     } else if (SDL_strcmp(interface, "wl_starfish_pointer") == 0) {
         SDL_VideoDevice *device = SDL_GetVideoDevice();
         d->starfish_pointer = wl_registry_bind(registry, id, &wl_starfish_pointer_interface, 1);
