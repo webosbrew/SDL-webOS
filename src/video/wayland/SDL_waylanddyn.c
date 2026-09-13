@@ -172,11 +172,6 @@ int SDL_WAYLAND_LoadSymbols(void)
         if(!WAYLAND_wl_proxy_marshal_constructor_versioned) {
             WAYLAND_wl_proxy_marshal_constructor_versioned = FALLBACK_wl_proxy_marshal_constructor_versioned;
         }
-#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
-        if (WaylandWebOS_AbiFixInit() != 0) {
-            rc = 0;
-        }
-#endif
 
 #else /* no dynamic WAYLAND */
 
