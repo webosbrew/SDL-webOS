@@ -52,7 +52,12 @@ extern int WaylandWebOS_AbiFixInit()
         return 0;
     }
     s_webOSClientLib = SDL_LoadObject("libwayland-webos-client.so.1");
-    return s_webOSClientLib == NULL ? -1 : 0;
+    if (s_webOSClientLib == NULL) {
+        SDL_LogDebug(SDL_LOG_CATEGORY_VIDEO,
+                     "libwayland-webos-client.so.1 unavailable; wl_webos_input_manager will not be bound");
+        return -1;
+    }
+    return 0;
 }
 
 extern void WaylandWebOS_AbiFixFini()
