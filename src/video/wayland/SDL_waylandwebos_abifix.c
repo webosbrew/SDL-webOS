@@ -74,9 +74,14 @@ extern const struct wl_interface *WaylandWebOS_AbiFixGetInterface(const char *na
         return NULL;
     }
     if (abifix->interface == NULL) {
+        if (WaylandWebOS_AbiFixInit() != 0) {
+            return NULL;
+        }
         SDL_snprintf(sym_name, sizeof(sym_name), "%s_interface", name);
         abifix->interface = (const struct wl_interface *)SDL_LoadFunction(s_webOSClientLib, sym_name);
-        SDL_assert(abifix->interface != NULL);
+        if (abifix->interface == NULL) {
+            return NULL;
+        }
         LoadMapping(abifix);
     }
     return abifix->interface;

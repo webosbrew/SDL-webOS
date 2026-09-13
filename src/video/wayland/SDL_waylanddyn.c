@@ -173,8 +173,10 @@ int SDL_WAYLAND_LoadSymbols(void)
             WAYLAND_wl_proxy_marshal_constructor_versioned = FALLBACK_wl_proxy_marshal_constructor_versioned;
         }
 #ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+        /* Not fatal: the input manager simply won't be bound. */
         if (WaylandWebOS_AbiFixInit() != 0) {
-            rc = 0;
+            SDL_LogDebug(SDL_LOG_CATEGORY_VIDEO,
+                         "libwayland-webos-client.so.1 unavailable; wl_webos_input_manager will not be bound");
         }
 #endif
 
