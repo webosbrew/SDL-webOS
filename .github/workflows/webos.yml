@@ -44,6 +44,7 @@ jobs:
           cmake -B build -S . \
             -DCMAKE_TOOLCHAIN_FILE=/tmp/arm-webos-linux-gnueabi_sdk-buildroot/share/buildroot/toolchainfile.cmake \
             -DCMAKE_BUILD_TYPE=Release -DWEBOS=ON -DSDL_TESTS=ON -DSDL_OFFSCREEN=OFF \
+            -DSDL_STATIC=ON \
             -DSDL_DISKAUDIO=OFF -DSDL_KMSDRM=OFF -DSDL_VENDOR_INFO="webOS Backport" \
             -DSDL_WEBOS_HAVE_LIBHELPER=${{ matrix.libhelper }}
 
@@ -66,7 +67,7 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=/tmp/arm-webos-linux-gnueabi_sdk-buildroot/share/buildroot/toolchainfile.cmake \
             -DCMAKE_BUILD_TYPE=Release \
             -DTEST_SHARED=ON \
-            -DTEST_STATIC=OFF \
+            -DTEST_STATIC=ON \
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/dist"
           cmake --build cmake_test_build --verbose --config Release
 
@@ -76,6 +77,27 @@ jobs:
           export CC=/tmp/arm-webos-linux-gnueabi_sdk-buildroot/bin/arm-webos-linux-gnueabi-gcc
           export PKG_CONFIG_PATH="${{ github.workspace }}/dist/lib/pkgconfig"
           cmake/test/test_pkgconfig.sh
+
+      # With the .so beside the .a, -lSDL3 picks the .so, so the static leg of
+      # test_pkgconfig.sh never touches libSDL3.a or Libs.private. Link against
+      # a copy with the .so removed, and check nothing still wants it.
+      - name: 'Verify sdl3.pc (static only)'
+        run: |
+          export CC=/tmp/arm-webos-linux-gnueabi_sdk-buildroot/bin/arm-webos-linux-gnueabi-gcc
+          READELF=/tmp/arm-webos-linux-gnueabi_sdk-buildroot/bin/arm-webos-linux-gnueabi-readelf
+          rm -rf dist-static pkgconfig_static
+          cp -a dist dist-static
+          rm -f dist-static/lib/libSDL3.so*
+          export PKG_CONFIG_PATH="${{ github.workspace }}/dist-static/lib/pkgconfig"
+          mkdir pkgconfig_static
+          set -x
+          $CC -c cmake/test/main_gui.c -o pkgconfig_static/main_gui.o $(pkg-config --cflags sdl3)
+          $CC pkgconfig_static/main_gui.o -o pkgconfig_static/main_gui_static $(pkg-config --libs --static sdl3)
+          $READELF -d pkgconfig_static/main_gui_static | grep NEEDED
+          if $READELF -d pkgconfig_static/main_gui_static | grep -q 'NEEDED.*libSDL3'; then
+            echo "static link still depends on libSDL3.so" >&2
+            exit 1
+          fi
 
       # libhelpers is dlopened, so the OFF leg exists to keep that code path
       # compiling, not to ship. Only the ON build is released.
