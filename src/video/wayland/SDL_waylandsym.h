@@ -168,7 +168,7 @@ SDL_WAYLAND_SYM(const char *, xkb_keymap_layout_get_name, (struct xkb_keymap *, 
 SDL_WAYLAND_SYM_OPT(size_t, xkb_keymap_key_get_mods_for_level, (struct xkb_keymap *, xkb_keycode_t, xkb_layout_index_t, xkb_level_index_t, xkb_mod_mask_t *, size_t) )
 SDL_WAYLAND_SYM(xkb_level_index_t, xkb_state_key_get_level, (struct xkb_state *, xkb_keycode_t, xkb_layout_index_t) )
 
-#if SDL_XKBCOMMON_CHECK_VERSION(1, 10, 0)
+#if SDL_XKBCOMMON_CHECK_VERSION(1, 10, 0) && !defined(__WEBOS__)
 SDL_WAYLAND_SYM(xkb_mod_mask_t, xkb_keymap_mod_get_mask, (struct xkb_keymap *, const char *))
 #endif
 
