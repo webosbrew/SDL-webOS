@@ -27,7 +27,6 @@
 #include "SDL_waylandvideo.h"
 
 #include "../SDL_sysvideo.h"
-#include "../../core/webos/SDL_webos_png.h"
 
 #ifdef SDL_WEBOS_HAVE_LIBHELPER
 #include "../../core/webos/SDL_webos_json.h"
@@ -78,7 +77,6 @@ static SDL_Surface *WaylandWebOS_LoadCursorSurface(const char *type, const char 
 {
     const char size = WaylandWebOS_GetCursorSize();
     SDL_IOStream *src;
-    SDL_Surface *surface;
     char path[64];
 
     SDL_snprintf(path, sizeof(path), "/usr/share/im/cursorType%ssz%cst%s.png", type, size, state);
@@ -91,10 +89,7 @@ static SDL_Surface *WaylandWebOS_LoadCursorSurface(const char *type, const char 
         return NULL;
     }
 
-    surface = IMG_LoadPNG_IO(src);
-    SDL_CloseIO(src);
-
-    return surface;
+    return SDL_LoadPNG_IO(src, true);
 }
 
 SDL_Surface *WaylandWebOS_LoadSystemCursorSurface(SDL_SystemCursor id)

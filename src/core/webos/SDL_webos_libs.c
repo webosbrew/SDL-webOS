@@ -23,7 +23,6 @@
 #ifdef SDL_PLATFORM_WEBOS
 
 #include "SDL_webos_libs.h"
-#include "SDL_webos_png.h"
 
 #define SDL_HELPERS_SYM(rc, fn, params)     SDL_DYNHELPERSFN_##fn HELPERS_##fn;
 #define SDL_HELPERS_SYM_OPT(rc, fn, params) SDL_DYNHELPERSFN_##fn HELPERS_##fn;
@@ -104,13 +103,7 @@ bool SDL_webOSLoadLibraries(void)
 {
     // Never fatal: SDL runs without it, minus the luna-backed features.
     LoadHelpers();
-    if (!LoadPbnjson()) {
-        return false;
-    }
-    if (!IMG_InitPNG()) {
-        return false;
-    }
-    return true;
+    return LoadPbnjson();
 }
 
 void SDL_webOSUnloadLibraries(void)
@@ -124,8 +117,6 @@ void SDL_webOSUnloadLibraries(void)
         SDL_UnloadObject(LibPbnjsonHandle);
     }
     LibPbnjsonHandle = NULL;
-
-    IMG_QuitPNG();
 }
 
 #endif // SDL_PLATFORM_WEBOS

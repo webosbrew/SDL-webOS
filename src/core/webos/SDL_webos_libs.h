@@ -25,7 +25,7 @@
 
 #ifdef SDL_PLATFORM_WEBOS
 
-// Load libhelpers, libpbnjson_c and libpng. Returns true on success; call
+// Load libhelpers and libpbnjson_c. Returns true on success; call
 // SDL_GetError() for more information on failure.
 extern bool SDL_webOSLoadLibraries(void);
 
