@@ -2154,7 +2154,11 @@ elseif(UNIX AND NOT APPLE AND NOT RISCOS AND NOT HAIKU)
   CheckPTHREAD()
 
   if(SDL_CLOCK_GETTIME)
-    check_library_exists(c clock_gettime "" FOUND_CLOCK_GETTIME_LIBC)
+    # webOS has glibc 2.12, where clock_gettime is only in librt. The libc
+    # check would pass anyway, as the toolchain specs add -lrt to every link.
+    if(NOT WEBOS)
+      check_library_exists(c clock_gettime "" FOUND_CLOCK_GETTIME_LIBC)
+    endif()
     if(FOUND_CLOCK_GETTIME_LIBC)
       set(HAVE_CLOCK_GETTIME 1)
     else()
