@@ -2201,6 +2201,7 @@ elseif(UNIX AND NOT APPLE AND NOT RISCOS AND NOT HAIKU)
     sdl_glob_sources("${SDL3_SOURCE_DIR}/src/core/webos/*.c")
     # PUBLIC so tests and consumers agree with the library about the platform.
     sdl_compile_definitions(PUBLIC "__WEBOS__")
+    set(HAVE_WEBOS_HAVE_LIBHELPER ${SDL_WEBOS_HAVE_LIBHELPER})
   endif()
 
   set(SDL_STORAGE_GENERIC 1)
