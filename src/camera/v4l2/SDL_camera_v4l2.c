@@ -53,6 +53,8 @@ SDL_COMPILE_TIME_ASSERT(v4l2devicecaps, offsetof(struct v4l2_capability,device_c
 // no cameras; scan /dev instead.
 #ifdef SDL_PLATFORM_WEBOS
 #undef SDL_USE_LIBUDEV
+#include <sys/sysmacros.h>
+#include "../../core/webos/uevent_monitor.h"
 #endif
 
 #ifndef SDL_USE_LIBUDEV
@@ -64,6 +66,10 @@ typedef struct V4L2DeviceHandle
     char *bus_info;
     char *path;
 } V4L2DeviceHandle;
+
+#ifdef SDL_PLATFORM_WEBOS
+static SDL_webOSUeventMonitor *camera_uevent_monitor = NULL;
+#endif
 
 
 typedef enum io_method {
@@ -902,7 +908,7 @@ static void V4L2_FreeDeviceHandle(SDL_Camera *device)
     }
 }
 
-#ifdef SDL_USE_LIBUDEV
+#if defined(SDL_USE_LIBUDEV) || defined(SDL_PLATFORM_WEBOS)
 static bool FindV4L2CameraByPathCallback(SDL_Camera *device, void *userdata)
 {
     const V4L2DeviceHandle *handle = (const V4L2DeviceHandle *) device->handle;
@@ -915,7 +921,9 @@ static void MaybeRemoveDevice(const char *path)
         SDL_CameraDisconnected(SDL_FindPhysicalCameraByCallback(FindV4L2CameraByPathCallback, (void *) path));
     }
 }
+#endif // SDL_USE_LIBUDEV || SDL_PLATFORM_WEBOS
 
+#ifdef SDL_USE_LIBUDEV
 static void CameraUdevCallback(SDL_UDEV_deviceevent udev_type, int udev_class, const char *devpath)
 {
     if (devpath && (udev_class & SDL_UDEV_DEVICE_VIDEO_CAPTURE)) {
@@ -928,12 +936,54 @@ static void CameraUdevCallback(SDL_UDEV_deviceevent udev_type, int udev_class, c
 }
 #endif // SDL_USE_LIBUDEV
 
+#ifdef SDL_PLATFORM_WEBOS
+// The app jail's video nodes are copies made when the jail was created, so a
+// camera the kernel has since re-created under another MAJOR:MINOR arrives
+// on a node that still points at the old number.
+static bool NodeMatchesUevent(const SDL_webOSUevent *event)
+{
+    struct stat st;
+
+    if (event->devnum == 0 || stat(event->devnode, &st) != 0 || !S_ISCHR(st.st_mode)) {
+        return true;  // nothing to compare against.
+    }
+
+    if (st.st_rdev != event->devnum) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_SYSTEM, "CAMERA: %s is %u:%u, but the kernel's %s is %u:%u",
+                    event->devnode, major(st.st_rdev), minor(st.st_rdev),
+                    event->devname, major(event->devnum), minor(event->devnum));
+        return false;
+    }
+
+    return true;
+}
+
+static void V4L2_UpdateDevices(void)
+{
+    SDL_webOSUevent event;
+
+    while (SDL_webOSUeventMonitorPoll(camera_uevent_monitor, &event)) {
+        if (!NodeMatchesUevent(&event)) {
+            continue;
+        } else if (event.action == SDL_WEBOS_UEVENT_ACTION_ADD) {
+            MaybeAddDevice(event.devnode);
+        } else {
+            MaybeRemoveDevice(event.devnode);
+        }
+    }
+}
+#endif // SDL_PLATFORM_WEBOS
+
 static void V4L2_Deinitialize(void)
 {
 #ifdef SDL_USE_LIBUDEV
     SDL_UDEV_DelCallback(CameraUdevCallback);
     SDL_UDEV_Quit();
 #endif // SDL_USE_LIBUDEV
+#ifdef SDL_PLATFORM_WEBOS
+    SDL_webOSUeventMonitorClose(camera_uevent_monitor);
+    camera_uevent_monitor = NULL;
+#endif
 }
 
 static void V4L2_DetectDevices(void)
@@ -946,6 +996,16 @@ static void V4L2_DetectDevices(void)
         return;
     }
 #endif // SDL_USE_LIBUDEV
+
+#ifdef SDL_PLATFORM_WEBOS
+    // No udev in the app jail, so hotplug comes from a netlink uevent socket.
+    // Cameras already attached come out of it as adds, so drain it once now.
+    camera_uevent_monitor = SDL_webOSUeventMonitorOpen(SDL_WEBOS_DEVICE_PRESENCE_CHECK_VIDEO);
+    if (camera_uevent_monitor) {
+        V4L2_UpdateDevices();
+        return;
+    }
+#endif
 
     DIR *dirp = opendir("/dev");
     if (dirp) {
@@ -972,6 +1032,9 @@ static bool V4L2_Init(SDL_CameraDriverImpl *impl)
     impl->ReleaseFrame = V4L2_ReleaseFrame;
     impl->FreeDeviceHandle = V4L2_FreeDeviceHandle;
     impl->Deinitialize = V4L2_Deinitialize;
+#ifdef SDL_PLATFORM_WEBOS
+    impl->UpdateDevices = V4L2_UpdateDevices;
+#endif
 
     return true;
 }
