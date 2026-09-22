@@ -79,6 +79,12 @@ typedef struct SDL_webOSUevent
     /* Full path, e.g. "/dev/input/event14". Ready to hand to
      * MaybeAddDevice()/MaybeRemoveDevice() without any string building. */
     const char *devnode;
+
+    /* MAJOR:MINOR the kernel gave the device, or 0 when the event came from
+     * enumeration rather than the kernel and so carries none. A jail can hold
+     * a copy of a node made before the device was re-created, which still
+     * has the old number. */
+    dev_t devnum;
 } SDL_webOSUevent;
 
 /* Opens a monitor for one class of device node. Binds the socket first and

@@ -81,16 +81,18 @@ static bool Parse(char *buf, size_t len, SDL_webOSUevent *event)
 {
     const char *subsystem = NULL;
     const char *devname = NULL;
+    dev_t devnum = 0;
     SDL_webOSUeventAction action;
 
     SDL_zerop(event);
 
-    if (!ParseUevent(buf, len, &subsystem, &devname, &action)) {
+    if (!ParseUevent(buf, len, &subsystem, &devname, &devnum, &action)) {
         return false;
     }
 
     event->action = action;
     event->devname = devname;
+    event->devnum = devnum;
 
     return true;
 }
@@ -238,6 +240,7 @@ static void OpenMonitor(void)
     monitor.fd = open("/dev/null", O_RDONLY);
     monitor.base_dir = node_dir;
     monitor.prefix = "event";
+    monitor.log_category = SDL_LOG_CATEGORY_INPUT;
 }
 
 static void CloseMonitor(void)

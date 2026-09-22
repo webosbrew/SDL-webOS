@@ -30,6 +30,7 @@ typedef enum SDL_webOSDevicePresenceCheck
     SDL_WEBOS_DEVICE_PRESENCE_CHECK_HIDRAW,
     SDL_WEBOS_DEVICE_PRESENCE_CHECK_EVDEV,
     SDL_WEBOS_DEVICE_PRESENCE_CHECK_JS,
+    SDL_WEBOS_DEVICE_PRESENCE_CHECK_VIDEO, // uevent monitor only, no presence flags
 } SDL_webOSDevicePresenceCheck;
 
 extern Uint32 SDL_webOSGetDevicePresenceFlags(SDL_webOSDevicePresenceCheck check);
