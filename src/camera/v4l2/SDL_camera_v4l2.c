@@ -687,6 +687,13 @@ static bool V4L2_OpenDevice(SDL_Camera *device, const SDL_CameraSpec *spec)
 static bool FindV4L2CameraByBusInfoCallback(SDL_Camera *device, void *userdata)
 {
     const V4L2DeviceHandle *handle = (const V4L2DeviceHandle *) device->handle;
+#ifdef SDL_PLATFORM_WEBOS
+    // An unplugged camera the app still holds open stays listed until it is
+    // closed; it must not hide the same camera being plugged back in.
+    if (SDL_GetAtomicInt(&device->zombie)) {
+        return false;
+    }
+#endif
     return (SDL_strcmp(handle->bus_info, (const char *) userdata) == 0);
 }
 
@@ -912,6 +919,13 @@ static void V4L2_FreeDeviceHandle(SDL_Camera *device)
 static bool FindV4L2CameraByPathCallback(SDL_Camera *device, void *userdata)
 {
     const V4L2DeviceHandle *handle = (const V4L2DeviceHandle *) device->handle;
+#ifdef SDL_PLATFORM_WEBOS
+    // A zombie can share its node with the camera replugged there, and a
+    // remove is meant for the live one.
+    if (SDL_GetAtomicInt(&device->zombie)) {
+        return false;
+    }
+#endif
     return (SDL_strcmp(handle->path, (const char *) userdata) == 0);
 }
 
