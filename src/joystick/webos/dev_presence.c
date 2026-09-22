@@ -165,13 +165,19 @@ static NodeLiveness CheckSysDevChar(dev_t devnum)
 }
 
 /* Mounted in every jail config and lists only live nodes, but there is no
- * /sys/class/hidraw to match it, so this answers for evdev and js only. */
+ * /sys/class/hidraw to match it, so this answers for evdev and js only.
+ * hidraw would never be listed here, and reading that as absent would hide
+ * every hidraw node in a production jail. */
 static NodeLiveness CheckSysClassInput(const char *name)
 {
     char path[128];
     struct stat st;
 
-    if (name == NULL || stat("/sys/class/input", &st) != 0) {
+    if (name == NULL || (SDL_strncmp(name, "event", 5) != 0 && SDL_strncmp(name, "js", 2) != 0)) {
+        return NODE_LIVENESS_UNKNOWN;
+    }
+
+    if (stat("/sys/class/input", &st) != 0) {
         return NODE_LIVENESS_UNKNOWN;
     }
 
