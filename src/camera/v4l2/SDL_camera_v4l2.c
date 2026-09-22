@@ -275,6 +275,10 @@ static void V4L2_ReleaseFrame(SDL_Camera *device, SDL_Surface *frame)
     const io_method io = device->hidden->io;
     int i;
 
+    if (fd == -1) {
+        return;  // disconnected; CloseDevice frees whatever is left.
+    }
+
     for (i = 0; i < device->hidden->nb_buffers; ++i) {
         if (frame->pixels == device->hidden->buffers[i].start) {
             break;
@@ -462,6 +466,63 @@ static Uint32 format_sdl_to_v4l2(SDL_PixelFormat fmt)
     }
 }
 
+// Moves a mapped buffer's contents into anonymous memory at the same address,
+// so a frame still in use keeps its pixels without its mapping of the device.
+static bool DetachBufferMmap(struct buffer *buffer)
+{
+#ifdef MREMAP_FIXED
+    void *copy = mmap(NULL, buffer->length, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (copy == MAP_FAILED) {
+        return false;
+    }
+    SDL_memcpy(copy, buffer->start, buffer->length);
+    // this replaces the old mapping in one step, so a reader never sees the address unmapped.
+    if (mremap(copy, buffer->length, buffer->length, MREMAP_MAYMOVE | MREMAP_FIXED, buffer->start) == MAP_FAILED) {
+        munmap(copy, buffer->length);
+        return false;
+    }
+    return true;
+#else
+    return false;
+#endif
+}
+
+// The kernel can't give this camera's minor to anything else while the file
+// is still referenced, and each mapped buffer references it as much as the
+// fd does. A camera plugged back in would come back under a different node.
+static void V4L2_DisconnectDevice(SDL_Camera *device)
+{
+    struct SDL_PrivateCameraData *hidden = device->hidden;
+
+    if (!hidden || (hidden->fd == -1)) {
+        return;
+    }
+
+    if ((hidden->io == IO_METHOD_MMAP) || (hidden->io == IO_METHOD_USERPTR)) {
+        enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        xioctl(hidden->fd, VIDIOC_STREAMOFF, &type);
+    }
+
+    if (hidden->io == IO_METHOD_MMAP) {
+        for (int i = 0; i < hidden->nb_buffers; ++i) {
+            struct buffer *buffer = &hidden->buffers[i];
+            if (buffer->available) {
+                // a frame queued for the app or held by it points here.
+                DetachBufferMmap(buffer);  // on failure the mapping stays until CloseDevice.
+            } else if (munmap(buffer->start, buffer->length) == 0) {
+                buffer->start = NULL;
+            }
+        }
+    }
+
+    close(hidden->fd);
+    hidden->fd = -1;
+
+    #if DEBUG_CAMERA
+    SDL_Log("CAMERA: dev[%p] released the disconnected device", device);
+    #endif
+}
+
 static void V4L2_CloseDevice(SDL_Camera *device)
 {
     if (!device) {
@@ -472,7 +533,7 @@ static void V4L2_CloseDevice(SDL_Camera *device)
         const io_method io = device->hidden->io;
         const int fd = device->hidden->fd;
 
-        if ((io == IO_METHOD_MMAP) || (io == IO_METHOD_USERPTR)) {
+        if ((fd != -1) && ((io == IO_METHOD_MMAP) || (io == IO_METHOD_USERPTR))) {
             enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             xioctl(fd, VIDIOC_STREAMOFF, &type);
         }
@@ -488,7 +549,8 @@ static void V4L2_CloseDevice(SDL_Camera *device)
 
                 case IO_METHOD_MMAP:
                     for (int i = 0; i < device->hidden->nb_buffers; ++i) {
-                        if (munmap(device->hidden->buffers[i].start, device->hidden->buffers[i].length) == -1) {
+                        void *start = device->hidden->buffers[i].start;
+                        if (start && (start != MAP_FAILED) && (munmap(start, device->hidden->buffers[i].length) == -1)) {
                             SDL_SetError("munmap");
                         }
                     }
@@ -1041,6 +1103,7 @@ static bool V4L2_Init(SDL_CameraDriverImpl *impl)
     impl->DetectDevices = V4L2_DetectDevices;
     impl->OpenDevice = V4L2_OpenDevice;
     impl->CloseDevice = V4L2_CloseDevice;
+    impl->DisconnectDevice = V4L2_DisconnectDevice;
     impl->WaitDevice = V4L2_WaitDevice;
     impl->AcquireFrame = V4L2_AcquireFrame;
     impl->ReleaseFrame = V4L2_ReleaseFrame;
