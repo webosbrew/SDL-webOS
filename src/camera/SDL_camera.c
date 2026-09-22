@@ -1587,6 +1587,10 @@ bool SDL_CameraInit(const char *driver_name)
 // ("UpdateSubsystem" is the same naming that the other things that hook into PumpEvents use.)
 void SDL_UpdateCamera(void)
 {
+    if (camera_driver.impl.UpdateDevices) {
+        camera_driver.impl.UpdateDevices();  // may queue add/remove events for the code below.
+    }
+
     SDL_LockRWLockForReading(camera_driver.device_hash_lock);
     SDL_PendingCameraEvent *pending_events = camera_driver.pending_events.next;
     SDL_UnlockRWLock(camera_driver.device_hash_lock);

@@ -184,6 +184,7 @@ typedef struct SDL_CameraDriverImpl
     void (*ReleaseFrame)(SDL_Camera *device, SDL_Surface *frame); // Reclaim frame->pixels and frame->pitch!
     void (*FreeDeviceHandle)(SDL_Camera *device); // SDL is done with this device; free the handle from SDL_AddCamera()
     void (*Deinitialize)(void);
+    void (*UpdateDevices)(void); // optional; called from SDL_UpdateCamera() for backends without their own hotplug thread.
 
     bool ProvidesOwnCallbackThread;
 } SDL_CameraDriverImpl;
