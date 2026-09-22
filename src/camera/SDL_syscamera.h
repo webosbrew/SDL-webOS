@@ -155,6 +155,7 @@ struct SDL_Camera
     // Current state flags
     SDL_AtomicInt shutdown;
     SDL_AtomicInt zombie;
+    bool hardware_released;  // true once DisconnectDevice has run for this zombie.
 
     // A thread to feed the camera device
     SDL_Thread *thread;
@@ -185,6 +186,7 @@ typedef struct SDL_CameraDriverImpl
     void (*FreeDeviceHandle)(SDL_Camera *device); // SDL is done with this device; free the handle from SDL_AddCamera()
     void (*Deinitialize)(void);
     void (*UpdateDevices)(void); // optional; called from SDL_UpdateCamera() for backends without their own hotplug thread.
+    void (*DisconnectDevice)(SDL_Camera *device); // optional; called once on the device thread after a disconnect, to let go of the hardware before CloseDevice.
 
     bool ProvidesOwnCallbackThread;
 } SDL_CameraDriverImpl;

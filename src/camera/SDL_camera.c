@@ -279,6 +279,7 @@ static void ClosePhysicalCamera(SDL_Camera *device)
     SDL_aligned_free(device->zombie_pixels);
 
     device->permission = SDL_CAMERA_PERMISSION_STATE_PENDING;
+    device->hardware_released = false;
     device->zombie_pixels = NULL;
     device->filled_output_surfaces.next = NULL;
     device->empty_output_surfaces.next = NULL;
@@ -819,6 +820,14 @@ bool SDL_CameraThreadIterate(SDL_Camera *device)
     if (SDL_GetAtomicInt(&device->shutdown)) {
         SDL_UnlockMutex(device->lock);
         return false;  // we're done, shut it down.
+    }
+
+    // The app may keep a disconnected camera open for a long time; don't make the hardware wait for that.
+    if (!device->hardware_released && SDL_GetAtomicInt(&device->zombie)) {
+        device->hardware_released = true;
+        if (camera_driver.impl.DisconnectDevice) {
+            camera_driver.impl.DisconnectDevice(device);
+        }
     }
 
     const int permission = device->permission;
