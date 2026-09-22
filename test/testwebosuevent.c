@@ -66,10 +66,10 @@
 #include <string.h>
 
 /* Compiled in rather than linked, since these are internal and unexported. */
-#include "../src/joystick/webos/dev_presence.c"
-#include "../src/joystick/webos/dev_presence.h"
-#include "../src/joystick/webos/uevent_monitor.c"
-#include "../src/joystick/webos/uevent_monitor.h"
+#include "../src/core/webos/dev_presence.c"
+#include "../src/core/webos/dev_presence.h"
+#include "../src/core/webos/uevent_monitor.c"
+#include "../src/core/webos/uevent_monitor.h"
 
 /* The presence bitmask is 32 bits wide, so it structurally cannot represent a
  * device above this index. Netlink has no such limit, and reporting when we

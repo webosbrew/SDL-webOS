@@ -57,8 +57,8 @@
 
 /* Compiled in rather than linked: ParseUevent is static, and this follows the
  * same approach testevdev.c takes with SDL_evdev_capabilities.c. */
-#include "../src/joystick/webos/uevent_monitor.c"
-#include "../src/joystick/webos/uevent_monitor.h"
+#include "../src/core/webos/uevent_monitor.c"
+#include "../src/core/webos/uevent_monitor.h"
 
 static int failures;
 

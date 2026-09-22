@@ -2139,14 +2139,6 @@ elseif(UNIX AND NOT APPLE AND NOT RISCOS AND NOT HAIKU)
         "${SDL3_SOURCE_DIR}/src/joystick/linux/*.c"
         "${SDL3_SOURCE_DIR}/src/joystick/linux/*.h"
       )
-      if(WEBOS)
-        # Device presence polling and the netlink uevent monitor, used by both
-        # the joystick backend and hidapi, since the app jail has no udev.
-        sdl_glob_sources(
-          "${SDL3_SOURCE_DIR}/src/joystick/webos/*.c"
-          "${SDL3_SOURCE_DIR}/src/joystick/webos/*.h"
-        )
-      endif()
       set(HAVE_SDL_JOYSTICK TRUE)
     endif()
   endif()

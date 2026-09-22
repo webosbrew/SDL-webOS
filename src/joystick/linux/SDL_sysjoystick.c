@@ -46,7 +46,7 @@
 #include "../SDL_sysjoystick.h"
 #include "../SDL_joystick_c.h"
 #ifdef SDL_PLATFORM_WEBOS
-#include "../webos/uevent_monitor.h"
+#include "../../core/webos/uevent_monitor.h"
 #endif
 #include "../usb_ids.h"
 #include "SDL_sysjoystick_c.h"
@@ -140,7 +140,7 @@
 #include "../../core/linux/SDL_udev.h"
 
 #ifdef SDL_PLATFORM_WEBOS
-#include "../webos/dev_presence.h"
+#include "../../core/webos/dev_presence.h"
 #endif
 
 #if 0

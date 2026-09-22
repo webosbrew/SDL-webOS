@@ -73,8 +73,8 @@ SDL_ELF_NOTE_DLOPEN(
 #endif
 
 #ifdef SDL_PLATFORM_WEBOS
-#include "../joystick/webos/dev_presence.h"
-#include "../joystick/webos/uevent_monitor.h"
+#include "../core/webos/dev_presence.h"
+#include "../core/webos/uevent_monitor.h"
 #endif // SDL_PLATFORM_WEBOS
 
 #ifdef HAVE_INOTIFY
