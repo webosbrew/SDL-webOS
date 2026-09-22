@@ -49,6 +49,12 @@ SDL_COMPILE_TIME_ASSERT(v4l2devicecaps, offsetof(struct v4l2_capability,device_c
 #include "../../core/linux/SDL_evdev_capabilities.h"
 #include "../../core/linux/SDL_udev.h"
 
+// The webOS app jail has no /sys/class/video4linux, so a udev scan finds
+// no cameras; scan /dev instead.
+#ifdef SDL_PLATFORM_WEBOS
+#undef SDL_USE_LIBUDEV
+#endif
+
 #ifndef SDL_USE_LIBUDEV
 #include <dirent.h>
 #endif
