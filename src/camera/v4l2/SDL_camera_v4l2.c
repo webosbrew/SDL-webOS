@@ -1034,11 +1034,35 @@ static bool NodeMatchesUevent(const SDL_webOSUevent *event)
     return true;
 }
 
+static bool FindLiveV4L2CameraCallback(SDL_Camera *device, void *userdata)
+{
+    return !SDL_GetAtomicInt(&device->zombie);
+}
+
+// The jail only has the nodes it was created with, so a camera the kernel
+// numbers differently is never seen. uvc also adds a metadata node beside
+// each camera, which the jail normally lacks, so that case stays at debug
+// level whenever a camera is already known.
+static void CheckUeventNodeExists(const SDL_webOSUevent *event)
+{
+    struct stat st;
+
+    if (event->action != SDL_WEBOS_UEVENT_ACTION_ADD || event->devnum == 0 ||
+        stat(event->devnode, &st) == 0 || errno != ENOENT) {
+        return;
+    }
+
+    const SDL_LogPriority priority = SDL_FindPhysicalCameraByCallback(FindLiveV4L2CameraCallback, NULL) ? SDL_LOG_PRIORITY_DEBUG : SDL_LOG_PRIORITY_WARN;
+    SDL_LogMessage(SDL_LOG_CATEGORY_SYSTEM, priority, "CAMERA: the kernel added %s (%u:%u), but %s does not exist here",
+                   event->devname, major(event->devnum), minor(event->devnum), event->devnode);
+}
+
 static void V4L2_UpdateDevices(void)
 {
     SDL_webOSUevent event;
 
     while (SDL_webOSUeventMonitorPoll(camera_uevent_monitor, &event)) {
+        CheckUeventNodeExists(&event);
         if (!NodeMatchesUevent(&event)) {
             continue;
         } else if (event.action == SDL_WEBOS_UEVENT_ACTION_ADD) {
