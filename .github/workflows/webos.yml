@@ -19,7 +19,7 @@ jobs:
         webos-abi: [ 'ON', 'OFF' ]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download webOS NDK
         uses: robinraju/release-downloader@v1.13
