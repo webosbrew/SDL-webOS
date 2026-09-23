@@ -505,6 +505,11 @@ static void Wayland_DeleteDevice(SDL_VideoDevice *device)
     }
     SDL_free(data);
     SDL_free(device);
+#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+    /* Not before wl_display_disconnect(): it frees input manager events still
+     * in the queue, and their wl_message lives in this library. */
+    WaylandWebOS_AbiFixQuit();
+#endif
     SDL_WAYLAND_UnloadSymbols();
 }
 
@@ -1725,7 +1730,6 @@ static void Wayland_VideoCleanup(SDL_VideoDevice *_this)
         wl_webos_input_manager_destroy(data->webos_input_manager);
         data->webos_input_manager = NULL;
     }
-    WaylandWebOS_AbiFixQuit();
 
     if (data->starfish_pointer) {
         wl_starfish_pointer_destroy(data->starfish_pointer);
