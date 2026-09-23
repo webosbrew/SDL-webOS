@@ -1436,6 +1436,12 @@ if(UNIX OR APPLE)
   endif()
 endif()
 
+# libpbnjson_c, libhelpers, the Wayland ABI fix library and Wayland itself are
+# all loaded through SDL_LoadObject() on webOS.
+if(WEBOS AND NOT HAVE_DLOPEN)
+  message(FATAL_ERROR "webOS requires dlopen, but dlopen was not found.")
+endif()
+
 if(UNIX OR APPLE OR HAIKU OR RISCOS)
   CheckO_CLOEXEC()
 endif()
@@ -1883,6 +1889,16 @@ elseif(UNIX AND NOT APPLE AND NOT RISCOS AND NOT HAIKU)
     CheckOpenGL()
     CheckOpenGLES()
     CheckWayland()
+
+    # The stand-ins for what the older libwayland on some webOS firmware lacks
+    # (wl_proxy_get_version and the marshal constructors) only exist in
+    # the dynamic loader, SDL_waylanddyn.c.
+    if(WEBOS AND HAVE_WAYLAND AND NOT HAVE_WAYLAND_SHARED)
+      message(FATAL_ERROR
+        "webOS requires Wayland to be loaded dynamically, "
+        "but this build links Wayland directly.")
+    endif()
+
     CheckOpenVR()
     CheckVivante()
     CheckVulkan()
