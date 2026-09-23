@@ -1774,6 +1774,18 @@ elseif(UNIX AND NOT APPLE AND NOT RISCOS AND NOT HAIKU)
     if(NOT HAVE_WAYLAND)
       message_error("webOS requires Wayland support")
     endif()
+    # libpbnjson_c, libhelpers, the Wayland ABI fix library and Wayland itself
+    # are all loaded through SDL_LoadObject().
+    if(NOT SDL_LOADSO)
+      message_error("webOS requires SDL_LOADSO, but it is disabled")
+    elseif(NOT HAVE_SDL_LOADSO)
+      message_error("webOS requires dlopen, but dlopen was not found")
+    endif()
+    # The stand-ins for what the older libwayland on some webOS firmware lacks
+    # only exist in the dynamic loader, SDL_waylanddyn.c.
+    if(NOT HAVE_WAYLAND_SHARED)
+      message_error("webOS requires Wayland to be loaded dynamically, but this build links Wayland directly")
+    endif()
   endif()
 
   set(SDL_RLD_FLAGS "")
