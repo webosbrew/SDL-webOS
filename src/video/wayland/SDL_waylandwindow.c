@@ -381,7 +381,9 @@ static void ConfigureWindowGeometry(SDL_Window *window)
                 // Calculate the integer scale from the mode and output.
                 const int32_t int_scale = SDL_max(window->current_fullscreen_mode.w / output_width, 1);
 
-                wl_surface_set_buffer_scale(data->surface, int_scale);
+                if (wl_surface_get_version(data->surface) >= WL_SURFACE_SET_BUFFER_SCALE_SINCE_VERSION) {
+                    wl_surface_set_buffer_scale(data->surface, int_scale);
+                }
                 data->current.logical_width = window->current_fullscreen_mode.w;
                 data->current.logical_height = window->current_fullscreen_mode.h;
             }
@@ -398,7 +400,8 @@ static void ConfigureWindowGeometry(SDL_Window *window)
         if (window_size_changed || buffer_size_changed) {
             if (data->viewport) {
                 wp_viewport_set_destination(data->viewport, window_width, window_height);
-            } else if (window->flags & SDL_WINDOW_HIGH_PIXEL_DENSITY) {
+            } else if ((window->flags & SDL_WINDOW_HIGH_PIXEL_DENSITY) &&
+                       wl_surface_get_version(data->surface) >= WL_SURFACE_SET_BUFFER_SCALE_SINCE_VERSION) {
                 // Don't change this if the DPI awareness flag is unset, as an application may have set this manually on a custom or external surface.
                 wl_surface_set_buffer_scale(data->surface, (int32_t)scale_factor);
             }
