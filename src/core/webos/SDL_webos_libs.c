@@ -34,6 +34,8 @@
 
 static SDL_SharedObject *LibHelpersHandle = NULL;
 static SDL_SharedObject *LibPbnjsonHandle = NULL;
+// Set once libhelpers failed to make its luna bridge, which it never recovers from.
+static bool LibHelpersNoBridge = false;
 
 static SDL_FunctionPointer WebOSGetSym(SDL_SharedObject *object, const char *name, bool required, bool *valid)
 {
@@ -61,6 +63,9 @@ static void UnloadHelpers(void)
 static void LoadHelpers(void)
 {
     bool valid = true;
+    if (LibHelpersNoBridge) {
+        return;
+    }
     if (LibHelpersHandle == NULL) {
         LibHelpersHandle = SDL_LoadObject("libhelpers.so.2");
     }
@@ -78,6 +83,33 @@ static void LoadHelpers(void)
     if (!valid) {
         SDL_LogWarn(SDL_LOG_CATEGORY_SYSTEM,
                     "webOS: libhelpers.so.2 is missing required symbols; luna service calls are disabled");
+        UnloadHelpers();
+    }
+}
+
+/* HLunaServiceCall() hangs for good when libhelpers can't make its luna bridge,
+ * e.g. for a binary without an ls2 role: it retries
+ * HLunaServiceBridge::MakeBridge() while holding g_lsMutex, a non-recursive
+ * mutex MakeBridge() takes itself. Make the bridge here instead, outside that
+ * lock, the same way HLunaServiceCall() starts, and drop the entry points if it
+ * fails. */
+void SDL_webOSCheckHelpers(void)
+{
+    typedef void *(*SDL_DYNHELPERSFN_BridgeInstance)(void);
+    SDL_DYNHELPERSFN_BridgeInstance instance;
+
+    if (LibHelpersHandle == NULL || HELPERS_HLunaServiceCall == NULL) {
+        return;
+    }
+    instance = (SDL_DYNHELPERSFN_BridgeInstance)SDL_LoadFunction(LibHelpersHandle, "_ZN18HLunaServiceBridge8instanceEv");
+    if (instance == NULL) {
+        SDL_ClearError();
+        return;
+    }
+    if (instance() == NULL) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_SYSTEM,
+                    "webOS: libhelpers couldn't register with luna; luna service calls are disabled");
+        LibHelpersNoBridge = true;
         UnloadHelpers();
     }
 }

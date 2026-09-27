@@ -376,6 +376,7 @@ bool SDL_InitSubSystem(SDL_InitFlags flags)
         SDL_WebOSInitCalled = true;
 #ifdef SDL_WEBOS_HAVE_LIBHELPER
         SDL_webOSInitLSHandle();
+        SDL_webOSCheckHelpers();
         if (!SDL_webOSAppRegistered()) {
             if (!SDL_webOSRegisterApp()) {
                 SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to register app: %s", SDL_GetError());

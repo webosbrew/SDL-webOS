@@ -31,6 +31,9 @@ extern bool SDL_webOSLoadLibraries(void);
 
 extern void SDL_webOSUnloadLibraries(void);
 
+// Make libhelpers' luna bridge now, and disable luna service calls if it fails.
+extern void SDL_webOSCheckHelpers(void);
+
 #define SDL_HELPERS_SYM(rc, fn, params)        \
     typedef rc (*SDL_DYNHELPERSFN_##fn) params; \
     extern SDL_DYNHELPERSFN_##fn HELPERS_##fn;
