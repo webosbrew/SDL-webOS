@@ -44,15 +44,14 @@ static SDL_FunctionPointer WebOSGetSym(SDL_SharedObject *object, const char *nam
     return sym;
 }
 
+/* libhelpers starts its own GMainLoop thread on first use and has no way to
+ * stop it, so the library stays mapped once loaded; unmapping it would pull
+ * the code out from under that thread. Only the entry points are dropped. */
 static void UnloadHelpers(void)
 {
 #define SDL_HELPERS_SYM(rc, fn, params)     HELPERS_##fn = NULL;
 #define SDL_HELPERS_SYM_OPT(rc, fn, params) HELPERS_##fn = NULL;
 #include "SDL_webos_helpers_sym.h"
-    if (LibHelpersHandle != NULL) {
-        SDL_UnloadObject(LibHelpersHandle);
-    }
-    LibHelpersHandle = NULL;
 }
 
 /* libhelpers carries the luna service calls: app registration, the screensaver
@@ -62,7 +61,9 @@ static void UnloadHelpers(void)
 static void LoadHelpers(void)
 {
     bool valid = true;
-    LibHelpersHandle = SDL_LoadObject("libhelpers.so.2");
+    if (LibHelpersHandle == NULL) {
+        LibHelpersHandle = SDL_LoadObject("libhelpers.so.2");
+    }
     if (LibHelpersHandle == NULL) {
         SDL_LogWarn(SDL_LOG_CATEGORY_SYSTEM,
                     "webOS: libhelpers.so.2 is unavailable (%s); luna service calls are disabled",
