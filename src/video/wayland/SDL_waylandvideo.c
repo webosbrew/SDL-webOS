@@ -986,6 +986,12 @@ static void handle_wl_output_mode(void *data, struct wl_output *output, uint32_t
         }
 
         internal->refresh = refresh;
+#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+        // webOS 1 sends the refresh rate in Hz instead of mHz.
+        if (refresh > 0 && refresh < 1000) {
+            internal->refresh = refresh * 1000;
+        }
+#endif
 
         /* Synthesize the done event that only exists from v2. This runs on
          * webOS even though it advertises v2, because wl_proxy_get_version is
