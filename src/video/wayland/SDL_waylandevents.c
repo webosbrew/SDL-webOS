@@ -1642,6 +1642,12 @@ static void Wayland_KeymapIterator(struct xkb_keymap *keymap, xkb_keycode_t key,
     }
 
     for (xkb_layout_index_t layout = 0; layout < seat->keyboard.xkb.num_layouts; ++layout) {
+        /* The xkbcommon that lacks xkb_keymap_key_for_each() doesn't wrap the layout in
+         * xkb_keymap_num_levels_for_key(), and reads past the groups of the key.
+         */
+        if (!WAYLAND_xkb_keymap_key_for_each && layout >= WAYLAND_xkb_keymap_num_layouts_for_key(seat->keyboard.xkb.keymap, key)) {
+            break;
+        }
         const xkb_level_index_t num_levels = WAYLAND_xkb_keymap_num_levels_for_key(seat->keyboard.xkb.keymap, key, layout);
         for (xkb_level_index_t level = 0; level < num_levels; ++level) {
             if (WAYLAND_xkb_keymap_key_get_syms_by_level(seat->keyboard.xkb.keymap, key, layout, level, &syms) > 0) {
@@ -1815,7 +1821,16 @@ static void keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
             }
         }
 
-        WAYLAND_xkb_keymap_key_for_each(seat->keyboard.xkb.keymap, Wayland_KeymapIterator, seat);
+        if (WAYLAND_xkb_keymap_key_for_each) {
+            WAYLAND_xkb_keymap_key_for_each(seat->keyboard.xkb.keymap, Wayland_KeymapIterator, seat);
+        } else {
+            /* webOS 1 ships an xkbcommon older than 0.5.0, without xkb_keymap_key_for_each() or the
+             * min/max keycode queries. Walk every evdev keycode; ones the keymap lacks have no layouts.
+             */
+            for (xkb_keycode_t key = 8; key <= KEY_MAX + 8; ++key) {
+                Wayland_KeymapIterator(seat->keyboard.xkb.keymap, key, seat);
+            }
+        }
 
         // Restore any previously set modifier/layout information, if valid.
         WAYLAND_xkb_state_update_mask(seat->keyboard.xkb.state,
