@@ -1291,7 +1291,7 @@ static bool Wayland_ShowCursor(SDL_Cursor *cursor)
     /* The compositor draws the pointer itself. Ask it directly, since the seats
      * below are only reached once one of them has entered a surface, and
      * SDL_RedrawCursor() only passes NULL while a window has mouse focus. */
-    WaylandWebOS_SetCursorVisibility(mouse->cursor_visible);
+    WaylandWebOS_UpdateCursorVisibility(mouse->cursor_visible);
 #endif
 
     wl_list_for_each (seat, &d->seat_list, link) {
