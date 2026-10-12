@@ -35,6 +35,11 @@ extern SDL_Surface *WaylandWebOS_LoadSystemCursorSurface(SDL_SystemCursor id);
  * is unavailable; the caller reports the error. */
 extern bool WaylandWebOS_SetCursorVisibility(bool visible);
 
+/* The same, but only when it changes what was last asked. SDL redraws the cursor
+ * on every focus change, and a request that repeats the current state, sent as
+ * LG's screensaver takes focus, ends the screensaver at once. */
+extern bool WaylandWebOS_UpdateCursorVisibility(bool visible);
+
 extern void WaylandWebOS_FiniCursor(void);
 
 #endif // SDL_VIDEO_DRIVER_WAYLAND_WEBOS

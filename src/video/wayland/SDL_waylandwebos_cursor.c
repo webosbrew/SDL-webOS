@@ -145,6 +145,14 @@ bool WaylandWebOS_SetCursorVisibility(bool visible)
     return true;
 }
 
+bool WaylandWebOS_UpdateCursorVisibility(bool visible)
+{
+    if (visible != cursor_hidden) {
+        return true;
+    }
+    return WaylandWebOS_SetCursorVisibility(visible);
+}
+
 void WaylandWebOS_FiniCursor(void)
 {
     // Don't leave the compositor's pointer hidden for whatever runs next.
