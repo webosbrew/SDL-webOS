@@ -2752,6 +2752,16 @@ extern "C" {
  */
 #define SDL_HINT_WEBOS_WINDOW_CLASS "SDL_WEBOS_WINDOW_CLASS"
 /**
+ * \brief A variable that sets the webOS window type, for example
+ *        "_WEBOS_WINDOW_TYPE_OVERLAY". Read when the window is created.
+ *
+ * An overlay window is shown over live TV or the current input, like LG Home,
+ * and the TV keeps playing behind it. Values that do not start with
+ * "_WEBOS_WINDOW_TYPE_" are ignored; when unset, webOS uses its default (a
+ * card window).
+ */
+#define SDL_HINT_WEBOS_WINDOW_TYPE "SDL_WEBOS_WINDOW_TYPE"
+/**
  * \brief A variable that decides update frequency of the cursor in second.
  */
 #define SDL_HINT_WEBOS_CURSOR_FREQUENCY "SDL_WEBOS_CURSOR_FREQUENCY"
