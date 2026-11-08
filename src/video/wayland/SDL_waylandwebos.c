@@ -215,6 +215,13 @@ bool WaylandWebOS_SetupSurface(SDL_VideoDevice *_this, SDL_WindowData *data)
     wl_webos_shell_surface_add_listener(surface, &webos_shell_surface_listener, data);
     wl_webos_shell_surface_set_property(surface, "appId", appid);
 
+    /* For example _WEBOS_WINDOW_TYPE_OVERLAY, which keeps live TV playing
+     * behind the window. Only read here: the type is fixed at creation. */
+    hint = SDL_GetHint(SDL_HINT_WEBOS_WINDOW_TYPE);
+    if (hint && SDL_strncmp(hint, "_WEBOS_WINDOW_TYPE_", 19) == 0) {
+        wl_webos_shell_surface_set_property(surface, "_WEBOS_WINDOW_TYPE", hint);
+    }
+
     for (i = 0; i < SDL_arraysize(webos_window_hints); ++i) {
         ApplyWindowHint(surface, webos_window_hints[i]);
     }

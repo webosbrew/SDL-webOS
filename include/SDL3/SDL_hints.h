@@ -4569,6 +4569,18 @@ extern "C" {
 #define SDL_HINT_WEBOS_WINDOW_CLASS "SDL_WEBOS_WINDOW_CLASS"
 
 /**
+ * The webOS window type, for example "_WEBOS_WINDOW_TYPE_OVERLAY".
+ *
+ * An overlay window is shown over live TV or the current input, like LG Home,
+ * and the TV keeps playing behind it. Values that do not start with
+ * "_WEBOS_WINDOW_TYPE_" are ignored; when unset, webOS uses its default (a
+ * card window).
+ *
+ * This hint should be set before creating a window.
+ */
+#define SDL_HINT_WEBOS_WINDOW_TYPE "SDL_WEBOS_WINDOW_TYPE"
+
+/**
  * A variable controlling whether the window is activated when the
  * SDL_RaiseWindow function is called.
  *
