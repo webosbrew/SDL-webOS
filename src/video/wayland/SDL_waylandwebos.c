@@ -142,6 +142,11 @@ int WaylandWebOS_SetupSurface(_THIS, SDL_WindowData *data)
     }
     wl_webos_shell_surface_add_listener(data->shell_surface.webos.webos, &webos_shell_surface_listener, data);
     wl_webos_shell_surface_set_property(data->shell_surface.webos.webos, "appId", appId);
+    if ((hintValue = SDL_GetHint(SDL_HINT_WEBOS_WINDOW_TYPE)) != NULL) {
+        if (SDL_strncmp(hintValue, "_WEBOS_WINDOW_TYPE_", 19) == 0) {
+            wl_webos_shell_surface_set_property(data->shell_surface.webos.webos, "_WEBOS_WINDOW_TYPE", hintValue);
+        }
+    }
     if (SDL_GetHintBoolean(SDL_HINT_WEBOS_ACCESS_POLICY_KEYS_BACK, SDL_FALSE)) {
         wl_webos_shell_surface_set_property(data->shell_surface.webos.webos, "_WEBOS_ACCESS_POLICY_KEYS_BACK", "true");
     }
