@@ -117,6 +117,7 @@ static const char *const webos_window_hints[] = {
     SDL_HINT_WEBOS_ACCESS_POLICY_KEYS_GUIDE,
     SDL_HINT_WEBOS_ACCESS_POLICY_KEYS_META,
     SDL_HINT_WEBOS_ACCESS_POLICY_RIBBON,
+    SDL_HINT_WEBOS_ACCESS_POLICY_KEYACTION_LAUNCH_APP,
     SDL_HINT_WEBOS_CURSOR_CALIBRATION_DISABLE,
     SDL_HINT_WEBOS_CLOUDGAME_ACTIVE,
     SDL_HINT_WEBOS_CURSOR_FREQUENCY
@@ -143,6 +144,9 @@ static void ApplyWindowHint(struct wl_webos_shell_surface *surface, const char *
                                             SDL_GetHintBoolean(name, false) ? "true" : "false");
     } else if (SDL_strcmp(name, SDL_HINT_WEBOS_ACCESS_POLICY_RIBBON) == 0) {
         wl_webos_shell_surface_set_property(surface, "_WEBOS_ACCESS_POLICY_RIBBON",
+                                            SDL_GetHintBoolean(name, true) ? "true" : "false");
+    } else if (SDL_strcmp(name, SDL_HINT_WEBOS_ACCESS_POLICY_KEYACTION_LAUNCH_APP) == 0) {
+        wl_webos_shell_surface_set_property(surface, "_WEBOS_ACCESS_POLICY_KEYACTION_LAUNCH_APP",
                                             SDL_GetHintBoolean(name, true) ? "true" : "false");
     } else if (SDL_strcmp(name, SDL_HINT_WEBOS_CURSOR_CALIBRATION_DISABLE) == 0) {
         wl_webos_shell_surface_set_property(surface, "restore_cursor_position",

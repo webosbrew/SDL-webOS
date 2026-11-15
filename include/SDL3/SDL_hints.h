@@ -4529,6 +4529,17 @@ extern "C" {
 #define SDL_HINT_WEBOS_ACCESS_POLICY_RIBBON "SDL_WEBOS_ACCESS_POLICY_RIBBON"
 
 /**
+ * Whether system key actions may launch another app over this one. Defaults
+ * to true.
+ *
+ * On webOS 26 the gamepad View button opens the LG Gaming Portal unless this
+ * is "false".
+ *
+ * This hint should be set before creating a window.
+ */
+#define SDL_HINT_WEBOS_ACCESS_POLICY_KEYACTION_LAUNCH_APP "SDL_WEBOS_ACCESS_POLICY_KEYACTION_LAUNCH_APP"
+
+/**
  * Whether the compositor restores the cursor position, disabling its own
  * calibration.
  *
