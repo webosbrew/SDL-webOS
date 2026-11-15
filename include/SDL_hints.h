@@ -3150,6 +3150,13 @@ extern "C" {
  */
 #define SDL_HINT_WEBOS_ACCESS_POLICY_RIBBON "SDL_WEBOS_ACCESS_POLICY_RIBBON"
 /**
+ * \brief  A variable that decides whether to let system key actions launch another app over this one.
+ *
+ * By default, webOS 26 opens the LG Gaming Portal when the gamepad View button is pressed.
+ * Setting this hint to "false" keeps the button for the app.
+ */
+#define SDL_HINT_WEBOS_ACCESS_POLICY_KEYACTION_LAUNCH_APP "SDL_WEBOS_ACCESS_POLICY_KEYACTION_LAUNCH_APP"
+/**
  * \brief A variable that decides how long till the cursor is hidden in milliseconds.
  */
 #define SDL_HINT_WEBOS_CURSOR_SLEEP_TIME "SDL_WEBOS_CURSOR_SLEEP_TIME"
