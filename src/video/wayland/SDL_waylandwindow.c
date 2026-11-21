@@ -1618,6 +1618,15 @@ static void Wayland_activate_window(SDL_VideoData *data, SDL_WindowData *wind,
                                     struct wl_surface *surface,
                                     uint32_t serial, struct wl_seat *seat)
 {
+#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+    if (wind->shell_surface_type == WAYLAND_SURFACE_WEBOS && wind->shell_surface.webos.webos) {
+        wl_webos_shell_surface_set_state(wind->shell_surface.webos.webos, WL_WEBOS_SHELL_SURFACE_STATE_FULLSCREEN);
+        /* libhelpers can raise the window while the SDL thread is waiting for
+         * events. Send the request without waiting for the next SDL pump. */
+        WAYLAND_wl_display_flush(data->display);
+        return;
+    }
+#endif
     if (data->activation_manager) {
         if (wind->activation_token) {
             /* We're about to overwrite this with a new request */
@@ -1644,11 +1653,6 @@ static void Wayland_activate_window(SDL_VideoData *data, SDL_WindowData *wind,
         }
         xdg_activation_token_v1_commit(wind->activation_token);
     }
-#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
-    else if (wind->shell_surface.webos.webos) {
-        wl_webos_shell_surface_set_state(wind->shell_surface.webos.webos, WL_WEBOS_SHELL_SURFACE_STATE_FULLSCREEN);
-    }
-#endif /* SDL_VIDEO_DRIVER_WAYLAND_WEBOS */
 }
 
 void Wayland_RaiseWindow(_THIS, SDL_Window *window)
