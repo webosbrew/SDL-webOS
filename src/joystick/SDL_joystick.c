@@ -455,7 +455,9 @@ static Uint32 initial_blacklist_devices[] = {
     MAKE_VIDPID(0x3434, 0x0353), // Keychron V5 System Control
     MAKE_VIDPID(0x3434, 0xd030), // Keychron Link
 #ifdef SDL_PLATFORM_WEBOS
-    MAKE_VIDPID(0x9999, 0x9999), // Smart Remote RCU Input, LGE Network Input
+    // Smart Remote RCU Input, LGE Network Input. Older firmware uses 9999:9999 for them,
+    // which is shared with "LG Magic gamepad", see SDL_IsWebOSNetworkInputDevice()
+    MAKE_VIDPID(0x9998, 0x9998),
 #endif
 };
 static SDL_vidpid_list blacklist_devices = {
@@ -3465,12 +3467,31 @@ static SDL_JoystickType SDL_GetJoystickGUIDType(SDL_GUID guid)
     return SDL_JOYSTICK_TYPE_UNKNOWN;
 }
 
+#ifdef SDL_PLATFORM_WEBOS
+// network-input-service creates "Smart Remote RCU Input" and "LGE Network Input" with ABS_X/ABS_Y
+// and every key code, so they look like joysticks. Newer firmware gives them 9998:9998 (in the
+// blacklist above); older firmware gives every device it creates 9999:9999, including the real
+// "LG Magic gamepad", so those are matched by name.
+static bool SDL_IsWebOSNetworkInputDevice(Uint16 vendor_id, Uint16 product_id, const char *name)
+{
+    if (vendor_id != 0x9999 || product_id != 0x9999 || !name) {
+        return false;
+    }
+    return SDL_strcmp(name, "Smart Remote RCU Input") == 0 || SDL_strcmp(name, "LGE Network Input") == 0;
+}
+#endif
+
 bool SDL_ShouldIgnoreJoystick(Uint16 vendor_id, Uint16 product_id, Uint16 version, const char *name)
 {
     // Check the joystick blacklist
     if (SDL_VIDPIDInList(vendor_id, product_id, &blacklist_devices)) {
         return true;
     }
+#ifdef SDL_PLATFORM_WEBOS
+    if (SDL_IsWebOSNetworkInputDevice(vendor_id, product_id, name)) {
+        return true;
+    }
+#endif
     if (!SDL_GetHintBoolean(SDL_HINT_JOYSTICK_ROG_CHAKRAM, false)) {
         if (SDL_VIDPIDInList(vendor_id, product_id, &rog_gamepad_mice)) {
             return true;
