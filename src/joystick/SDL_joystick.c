@@ -279,7 +279,9 @@ static Uint32 initial_blacklist_devices[] = {
     MAKE_VIDPID(0x26ce, 0x01a2), /* ASRock LED Controller */
     MAKE_VIDPID(0x20d6, 0x0002), /* PowerA Enhanced Wireless Controller for Nintendo Switch (charging port only) */
 #ifdef __WEBOS__
-    MAKE_VIDPID(0x9999, 0x9999), /* Smart Remote RCU Input, LGE Network Input */
+    /* Smart Remote RCU Input, LGE Network Input. Older firmware uses 9999:9999 for them,
+       which is shared with "LG Magic gamepad", see SDL_IsWebOSNetworkInputDevice() */
+    MAKE_VIDPID(0x9998, 0x9998),
 #endif
 };
 static SDL_vidpid_list blacklist_devices = {
@@ -2989,6 +2991,20 @@ static SDL_JoystickType SDL_GetJoystickGUIDType(SDL_JoystickGUID guid)
     return SDL_JOYSTICK_TYPE_UNKNOWN;
 }
 
+#ifdef __WEBOS__
+/* network-input-service creates "Smart Remote RCU Input" and "LGE Network Input" with ABS_X/ABS_Y
+   and every key code, so they look like joysticks. Newer firmware gives them 9998:9998 (in the
+   blacklist above); older firmware gives every device it creates 9999:9999, including the real
+   "LG Magic gamepad", so those are matched by name. */
+static SDL_bool SDL_IsWebOSNetworkInputDevice(Uint16 vendor, Uint16 product, const char *name)
+{
+    if (vendor != 0x9999 || product != 0x9999 || !name) {
+        return SDL_FALSE;
+    }
+    return SDL_strcmp(name, "Smart Remote RCU Input") == 0 || SDL_strcmp(name, "LGE Network Input") == 0;
+}
+#endif
+
 SDL_bool SDL_ShouldIgnoreJoystick(const char *name, SDL_JoystickGUID guid)
 {
     Uint16 vendor;
@@ -3000,6 +3016,11 @@ SDL_bool SDL_ShouldIgnoreJoystick(const char *name, SDL_JoystickGUID guid)
     if (SDL_VIDPIDInList(vendor, product, &blacklist_devices)) {
         return SDL_TRUE;
     }
+#ifdef __WEBOS__
+    if (SDL_IsWebOSNetworkInputDevice(vendor, product, name)) {
+        return SDL_TRUE;
+    }
+#endif
     if (!SDL_GetHintBoolean(SDL_HINT_JOYSTICK_ROG_CHAKRAM, SDL_FALSE)) {
         if (SDL_VIDPIDInList(vendor, product, &rog_gamepad_mice)) {
             return SDL_TRUE;
