@@ -40,7 +40,7 @@ static int parse_msg_signature(const char *signature, int *new_id_index)
         switch (*signature) {
         case 'n':
             *new_id_index = count;
-            // Intentional fallthrough
+            SDL_FALLTHROUGH;
         case 'i':
         case 'u':
         case 'f':
@@ -77,7 +77,7 @@ struct wl_proxy *FALLBACK_wl_proxy_marshal_constructor(struct wl_proxy *proxy, u
         wl_proxy_destroy(id);
         return NULL;
     }
-    memset(varargs, 0, sizeof(varargs));
+    SDL_zeroa(varargs);
     va_start(ap, interface);
     for (int i = 0; i < num_args; i++) {
         varargs[i] = va_arg(ap, void *);
@@ -115,7 +115,7 @@ struct wl_proxy *FALLBACK_wl_proxy_marshal_constructor_versioned(struct wl_proxy
         wl_proxy_destroy(id);
         return NULL;
     }
-    memset(varargs, 0, sizeof(varargs));
+    SDL_zeroa(varargs);
     va_start(ap, version);
     for (int i = 0; i < num_args; i++) {
         varargs[i] = va_arg(ap, void *);

@@ -74,12 +74,12 @@ static char *WebOS_GetAppPath(void)
 
         if (found) {
             char *result = SDL_strdup(path);
-            free(path); // realpath() allocated this, so not SDL_free
+            free(path); // This should NOT be SDL_free(): realpath() allocated it
             return result;
         }
     }
 
-    free(path);
+    free(path); // This should NOT be SDL_free(): realpath() allocated it
     return NULL;
 }
 
@@ -95,7 +95,7 @@ char *SDL_SYS_GetBasePath(void)
             return NULL;
         }
         result = SDL_strdup(path);
-        free(path);
+        free(path); // This should NOT be SDL_free(): realpath() allocated it
         return result;
     }
 
@@ -128,7 +128,7 @@ char *SDL_SYS_GetExeName(void)
     }
 
     result = SDL_strdup(path);
-    free(path);
+    free(path); // This should NOT be SDL_free(): realpath() allocated it
     return result;
 }
 
