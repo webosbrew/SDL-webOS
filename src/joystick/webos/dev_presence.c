@@ -103,21 +103,21 @@ Uint32 SDL_webOSGetDevicePresenceFlags(SDL_webOSDevicePresenceCheck check)
         char dev_path[sizeof("/dev/input/") + NAME_MAX];
         ret = fstatat(dev_dir_fd, dev_list[dev_idx]->d_name, &dev_st, 0);
         if (ret != 0 || !S_ISCHR(dev_st.st_mode)) {
-            free(dev_list[dev_idx]); // SHOULD NOT be freed with SDL_free()
+            free(dev_list[dev_idx]); // This should NOT be SDL_free(): scandir() allocated it
             continue;
         }
         dev_num = SDL_strtol(dev_list[dev_idx]->d_name + prefix_len, &endptr, 10);
         if (endptr == NULL || *endptr != '\0') {
-            free(dev_list[dev_idx]); // SHOULD NOT be freed with SDL_free()
+            free(dev_list[dev_idx]); // This should NOT be SDL_free(): scandir() allocated it
             continue;
         }
         SDL_snprintf(dev_path, sizeof(dev_path), "%s/%s", base_dir, dev_list[dev_idx]->d_name);
         if (SDL_webOSIsCharDevicePresent(dev_st.st_rdev, dev_path, dev_list[dev_idx]->d_name)) {
             flags |= 1 << dev_num;
         }
-        free(dev_list[dev_idx]); // SHOULD NOT be freed with SDL_free()
+        free(dev_list[dev_idx]); // This should NOT be SDL_free(): scandir() allocated it
     }
-    free(dev_list); // SHOULD NOT be freed with SDL_free()
+    free(dev_list); // This should NOT be SDL_free(): scandir() allocated it
 
     close(dev_dir_fd);
 
