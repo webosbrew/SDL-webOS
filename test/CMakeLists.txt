@@ -154,24 +154,24 @@ add_sdl_test_executable(testime NEEDS_RESOURCES testime.c testutils.c)
 add_sdl_test_executable(testjoystick testjoystick.c)
 add_sdl_test_executable(testkeys testkeys.c)
 
-# Netlink uevent hotplug monitor. Not gated on WEBOS: the mechanism is plain
-# Linux netlink, and running it on a desktop with a USB controller is useful
-# well before it reaches a TV. testwebosuevent needs real hotplug activity to
-# conclude anything, so only the parser tests are non-interactive.
-if(LINUX)
+# Netlink uevent hotplug monitor. The mechanism is plain Linux netlink, but
+# the sources sit under src/joystick/webos and need Linux-only headers
+# (linux/netlink.h, sys/sysmacros.h); LINUX alone is also true for the Haiku
+# cross-compiler container, so gate on WEBOS like the library does.
+# testwebosuevent needs real hotplug activity to conclude anything, so only the
+# parser tests are non-interactive.
+if(WEBOS)
     add_sdl_test_executable(testwebosuevent testwebosuevent.c)
     add_sdl_test_executable(testwebosuevent_parse NONINTERACTIVE testwebosuevent_parse.c)
 
-    if(WEBOS)
-        # These compile internal sources in, so they have to agree with the
-        # library on SDL_DYNAMIC_API. SDL_dynapi.h keys that off __WEBOS__,
-        # which the library picks up from sdl-build-options and tests
-        # otherwise don't -- leaving the test calling SDL_*_REAL while the
-        # library defines the plain names. SDL_dynapi.h rejects setting
-        # SDL_DYNAMIC_API on the command line, so match the define instead.
-        target_compile_definitions(testwebosuevent PRIVATE __WEBOS__)
-        target_compile_definitions(testwebosuevent_parse PRIVATE __WEBOS__)
-    endif()
+    # These compile internal sources in, so they have to agree with the
+    # library on SDL_DYNAMIC_API. SDL_dynapi.h keys that off __WEBOS__,
+    # which the library picks up from sdl-build-options and tests
+    # otherwise don't -- leaving the test calling SDL_*_REAL while the
+    # library defines the plain names. SDL_dynapi.h rejects setting
+    # SDL_DYNAMIC_API on the command line, so match the define instead.
+    target_compile_definitions(testwebosuevent PRIVATE __WEBOS__)
+    target_compile_definitions(testwebosuevent_parse PRIVATE __WEBOS__)
 endif()
 
 add_sdl_test_executable(testloadso testloadso.c)
