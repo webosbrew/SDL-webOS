@@ -67,6 +67,8 @@
 #define BTN_MIDDLE (0x112)
 #define BTN_SIDE   (0x113)
 #define BTN_EXTRA  (0x114)
+// wl_keyboard key codes are evdev codes on every platform; this is evdev's KEY_MAX.
+#define KEY_MAX    (0x2ff)
 #endif
 #include "../../events/SDL_keysym_to_scancode_c.h"
 #include "../../events/imKStoUCS.h"
