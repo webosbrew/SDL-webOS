@@ -1756,7 +1756,11 @@ static void keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
     seat->keyboard.sdl_keymap = NULL;
     seat->keyboard.xkb.num_layouts = 0;
 
+    /* Pick by what the running libxkbcommon has, not by the headers SDL was
+     * built against: webOS builds against a newer xkbcommon than many TVs ship,
+     * and xkb_keymap_mod_get_mask() only exists from 1.10. */
 #if SDL_XKBCOMMON_CHECK_VERSION(1, 10, 0)
+    if (WAYLAND_xkb_keymap_mod_get_mask) {
     seat->keyboard.xkb.shift_mask = WAYLAND_xkb_keymap_mod_get_mask(seat->keyboard.xkb.keymap, XKB_MOD_NAME_SHIFT);
     seat->keyboard.xkb.ctrl_mask = WAYLAND_xkb_keymap_mod_get_mask(seat->keyboard.xkb.keymap, XKB_MOD_NAME_CTRL);
     seat->keyboard.xkb.alt_mask = WAYLAND_xkb_keymap_mod_get_mask(seat->keyboard.xkb.keymap, XKB_VMOD_NAME_ALT);
@@ -1765,7 +1769,9 @@ static void keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
     seat->keyboard.xkb.level5_mask = WAYLAND_xkb_keymap_mod_get_mask(seat->keyboard.xkb.keymap, XKB_VMOD_NAME_LEVEL5);
     seat->keyboard.xkb.num_mask = WAYLAND_xkb_keymap_mod_get_mask(seat->keyboard.xkb.keymap, XKB_VMOD_NAME_NUM);
     seat->keyboard.xkb.caps_mask = WAYLAND_xkb_keymap_mod_get_mask(seat->keyboard.xkb.keymap, XKB_MOD_NAME_CAPS);
-#else
+    } else
+#endif
+    {
 #define GET_MOD_INDEX(mod) \
     WAYLAND_xkb_keymap_mod_get_index(seat->keyboard.xkb.keymap, XKB_MOD_NAME_##mod)
     seat->keyboard.xkb.shift_mask = 1 << GET_MOD_INDEX(SHIFT);
@@ -1778,7 +1784,7 @@ static void keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
     seat->keyboard.xkb.num_mask = 1 << GET_MOD_INDEX(NUM);
     seat->keyboard.xkb.caps_mask = 1 << GET_MOD_INDEX(CAPS);
 #undef GET_MOD_INDEX
-#endif
+    }
 
     if (seat->keyboard.xkb.state != NULL) {
         /* if there's already a state, throw it away rather than leaking it before
