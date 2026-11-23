@@ -2356,6 +2356,20 @@ static void Wayland_activate_window(SDL_VideoData *data, SDL_WindowData *target_
 
     struct wl_surface *requesting_surface = focus ? focus->surface : NULL;
 
+#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
+    /* webOS has no xdg-activation; asking the shell for fullscreen is what
+     * brings a backgrounded app back to the front. libhelpers can raise the
+     * window while the SDL thread is waiting for events, so send the request
+     * now rather than at the next SDL pump. */
+    if (target_wind->shell_surface_type == WAYLAND_SHELL_SURFACE_TYPE_CUSTOM &&
+        target_wind->shell_surface.webos.webos) {
+        wl_webos_shell_surface_set_state(target_wind->shell_surface.webos.webos,
+                                         WL_WEBOS_SHELL_SURFACE_STATE_FULLSCREEN);
+        WAYLAND_wl_display_flush(data->display);
+        return;
+    }
+#endif
+
     if (data->activation_manager) {
         if (target_wind->activation_token) {
             // We're about to overwrite this with a new request
@@ -2383,14 +2397,6 @@ static void Wayland_activate_window(SDL_VideoData *data, SDL_WindowData *target_
         }
         xdg_activation_token_v1_commit(target_wind->activation_token);
     }
-#ifdef SDL_VIDEO_DRIVER_WAYLAND_WEBOS
-    /* webOS has no xdg-activation; asking the shell for fullscreen is what
-     * brings a backgrounded app back to the front. */
-    else if (target_wind->shell_surface.webos.webos) {
-        wl_webos_shell_surface_set_state(target_wind->shell_surface.webos.webos,
-                                         WL_WEBOS_SHELL_SURFACE_STATE_FULLSCREEN);
-    }
-#endif
 }
 
 void Wayland_RaiseWindow(SDL_VideoDevice *_this, SDL_Window *window)
